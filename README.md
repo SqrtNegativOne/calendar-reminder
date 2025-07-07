@@ -1,0 +1,1 @@
+Calendar reminders to keep you focused. Uses FastAPI to set up webhook on localhost.
