@@ -1,14 +1,12 @@
-# To be implemented
-
 import tkinter as tk
 import logging
 
 from config import BACKGROUND_COLOR, TEXT_COLOR, FONT, DEFAULT_ALPHA, WIDTH, HEIGHT, GEOMETRY
-from ctypes import windll, byref, create_unicode_buffer, create_string_buffer
-FR_PRIVATE  = 0x10
-FR_NOT_ENUM = 0x20
 
 def loadfont(fontpath, private=True, enumerable=False):
+    from ctypes import windll, byref, create_unicode_buffer, create_string_buffer
+    FR_PRIVATE  = 0x10
+    FR_NOT_ENUM = 0x20
     '''
     Makes fonts located in file `fontpath` available to the font system.
 
@@ -21,8 +19,6 @@ def loadfont(fontpath, private=True, enumerable=False):
     '''
     # This function was taken from
     # https://github.com/ifwe/digsby/blob/f5fe00244744aa131e07f09348d10563f3d8fa99/digsby/src/gui/native/win/winfonts.py#L15
-    # This function is written for Python 2.x. For 3.x, you
-    # have to convert the isinstance checks to bytes and str
     if isinstance(fontpath, bytes):
         pathbuf = create_string_buffer(fontpath)
         AddFontResourceEx = windll.gdi32.AddFontResourceExA
@@ -58,9 +54,17 @@ class Overlay(tk.Tk):
 
         self.label: tk.Label = tk.Label(
             self,
-            text='00',
+            text='Test',
             foreground=TEXT_COLOR,
             font=FONT,
             bg=BACKGROUND_COLOR
         )
         self.label.pack()
+
+
+def main() -> None:
+    Overlay().mainloop()
+
+
+if __name__ == '__main__':
+    main()
