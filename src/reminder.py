@@ -1,7 +1,15 @@
 import tkinter as tk
 import logging
+logging.basicConfig(level=logging.INFO)
 
-from config import BACKGROUND_COLOR, TEXT_COLOR, FONT, DEFAULT_ALPHA, WIDTH, HEIGHT, GEOMETRY
+BACKGROUND_COLOR = "#000000"
+TEXT_COLOR = "#FFFFFF"
+FONT = "fs-sevegment"
+DEFAULT_ALPHA = 0.8
+
+WIDTH = 100
+HEIGHT = 100
+GEOMETRY = f"{WIDTH}x{HEIGHT}+100+100"
 
 def loadfont(fontpath, private=True, enumerable=False):
     from ctypes import windll, byref, create_unicode_buffer, create_string_buffer
@@ -31,14 +39,9 @@ def loadfont(fontpath, private=True, enumerable=False):
     flags = (FR_PRIVATE if private else 0) | (FR_NOT_ENUM if not enumerable else 0)
     numFontsAdded = AddFontResourceEx(byref(pathbuf), flags, 0)
     return bool(numFontsAdded)
-#loadfont(r"C:\Users\arkma\Sqrt-1\putting the pro in programming\unnecessarily professional tkinter stopwatch v2\assets\fs-sevegment\fs-sevegment.ttf")
+#loadfont(r"")
 
 class Overlay(tk.Tk):
-    # __slots__ = 'state', 'hiding', 'start_time', 'label', 'x', 'y'
-    # Run mypy with strict mode on before enabling the above.
-    # https://mypy.readthedocs.io/en/stable/getting_started.html
-    # https://marketplace.visualstudio.com/items?itemName=ms-python.mypy-type-checker
-
     def __init__(self, *args, **kwargs) -> None:
         self.logger = logging.getLogger('Overlay')
         self.logger.info('Stopwatch initialised.')

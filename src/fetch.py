@@ -6,7 +6,17 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from config import TOKEN_PATH, CREDENTIALS_PATH, SCOPES, MAX_RESULTS_TO_FETCH
+import os
+from pathlib import Path
+
+SECRETS_PATH = Path(__file__).parent.parent
+TOKEN_PATH = SECRETS_PATH / 'token.json'
+CREDENTIALS_PATH = SECRETS_PATH / 'credentials.json'
+
+SCOPES = ['https://www.googleapis.com/auth/calendar']
+LOCAL_DEV = os.getenv("ENV", "dev") == "dev"
+
+MAX_RESULTS_TO_FETCH = 12  # Maximum number of calendar items to fetch
 
 import logging
 
