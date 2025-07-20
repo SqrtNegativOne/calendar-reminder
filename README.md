@@ -1,1 +1,1 @@
-Calendar reminders to keep you focused. Uses FastAPI to set up webhook on localhost.
+Calendar reminders to keep you focused. Polls your calendar every 15 minutes to find what the current task is and displays it consistently at the bottom of your screen.

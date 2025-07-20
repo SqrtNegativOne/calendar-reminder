@@ -1,15 +1,14 @@
+from fetch import fetch_current_event_names
+import re
 import tkinter as tk
 import logging
 logging.basicConfig(level=logging.INFO)
 
-BACKGROUND_COLOR = "#000000"
-TEXT_COLOR = "#FFFFFF"
-FONT = "fs-sevegment"
-DEFAULT_ALPHA = 0.8
+FIFTEEN_MINTUTES_IN_SECONDS = 60 * 15
+FETCH_INTERVAL_SECONDS = FIFTEEN_MINTUTES_IN_SECONDS
 
-WIDTH = 100
-HEIGHT = 100
-GEOMETRY = f"{WIDTH}x{HEIGHT}+100+100"
+from config import SCREEN_GEOMETRY, BACKGROUND_COLOR, TEXT_COLOR, FONT, DEFAULT_ALPHA
+WINDOWS_TASKBAR_HEIGHT_IN_PIXELS = 48
 
 def loadfont(fontpath, private=True, enumerable=False):
     from ctypes import windll, byref, create_unicode_buffer, create_string_buffer
@@ -41,6 +40,37 @@ def loadfont(fontpath, private=True, enumerable=False):
     return bool(numFontsAdded)
 #loadfont(r"")
 
+def get_current_screen_width_height() -> tuple[int, int]:
+    """
+    Workaround to get the size of the current screen in a multi-screen setup.
+    """
+    if SCREEN_GEOMETRY is not None:
+        return SCREEN_GEOMETRY
+    
+    # Find `screen_geometry` by creating a full-screen temporary Tkinter window in current screen
+    root = tk.Tk()
+    root.update_idletasks()
+    root.attributes('-fullscreen', True)
+    root.state('iconic')
+    screen_geometry = root.winfo_geometry()
+    root.destroy()
+
+    match = re.fullmatch(r"(\d+)x(\d+)\+\d+\+\d+", screen_geometry)
+    if not match:
+        raise ValueError(f'Received invalid object: {screen_geometry=}')
+    
+    screen_width, screen_height = map(int, match.groups())
+    return screen_width, screen_height
+
+def get_window_geometry(window_width: int, window_height: int) -> str:
+    screen_width, screen_height = get_current_screen_width_height()
+
+    window_left = (screen_width - window_width) // 2
+    window_top = screen_height - WINDOWS_TASKBAR_HEIGHT_IN_PIXELS - window_height
+
+    return f'{window_width}x{window_height}+{window_left}+{window_top}'
+
+
 class Overlay(tk.Tk):
     def __init__(self, *args, **kwargs) -> None:
         self.logger = logging.getLogger('Overlay')
@@ -52,22 +82,28 @@ class Overlay(tk.Tk):
 
         self.config(bg=BACKGROUND_COLOR)
         self.attributes('-alpha', DEFAULT_ALPHA)
-        self.minsize(width=WIDTH, height=HEIGHT)
-        self.geometry(GEOMETRY)
+        self.geometry(get_window_geometry(
+            window_width  = 100,
+            window_height = 30
+        ))
 
-        self.label: tk.Label = tk.Label(
+        self.label_text: tk.StringVar = tk.StringVar(value='No current event')
+        label: tk.Label = tk.Label(
             self,
-            text='Test',
+            textvariable=self.label_text,
             foreground=TEXT_COLOR,
             font=FONT,
             bg=BACKGROUND_COLOR
         )
-        self.label.pack()
-
-
-def main() -> None:
-    Overlay().mainloop()
+        label.pack()
+        self.update_label()
+    
+    def update_label(self):
+        event_names = fetch_current_event_names()
+        text = ' ⋅ '.join(event_names)
+        self.label_text.set(value=text)
+        self.after(FETCH_INTERVAL_SECONDS, self.update_label)
 
 
 if __name__ == '__main__':
-    main()
+    Overlay().mainloop()
