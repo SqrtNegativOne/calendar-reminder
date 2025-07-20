@@ -16,8 +16,8 @@ MAX_RESULTS_TO_FETCH_PER_CALENDAR = 5
 # Size of your screen; (width, height) in pixels.
 # This is used to position the overlay window correctly.
 # Use `None` to force the application to calculate it upon initialisation.
-SCREEN_GEOMETRY: tuple[int, int] | None = (1920, 1200) # In reality it's (1536, 960) but windll DPI awareness messes stuff up...
-WINDOWS_TASKBAR_HEIGHT_IN_PIXELS = 58 # In reality it's 48 but windll DPI awareness messes stuff up...
+SCREEN_GEOMETRY: tuple[int, int] | None = (1920, 1200) # In reality it's (1536, 960) but windll DPI awareness multiplies it by 1.25
+WINDOWS_TASKBAR_HEIGHT_IN_PIXELS = 60 # In reality it's 48 but windll DPI awareness multiplies it by 1.25
 
 WINDOW_WIDTH: int = 300
 WINDOW_HEIGHT: int = 30
