@@ -8,6 +8,7 @@ MAX_TASK_LENGTH = timedelta(hours=2)
 # Maximum calendar items to fetch within the MAX_TASK_LENGTH duration.
 MAX_RESULTS_TO_FETCH_PER_CALENDAR = 5
 
+
 # -------------------------------------------------
 # REMINDER APP CONFIGURATION
 # -------------------------------------------------
