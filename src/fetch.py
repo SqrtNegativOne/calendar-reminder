@@ -9,7 +9,6 @@ from googleapiclient.errors import HttpError
 import os
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']
-LOCAL_DEV = os.getenv("ENV", "dev") == "dev"
 
 MAX_RESULTS_TO_FETCH_PER_CALENDAR = 3  # Maximum number of calendar items to fetch
 

@@ -1,14 +1,18 @@
-from fetch import fetch_current_event_names
-import re
 import tkinter as tk
 import logging
 logging.basicConfig(level=logging.INFO)
 
-FIFTEEN_MINTUTES_IN_SECONDS = 60 * 15
-FETCH_INTERVAL_SECONDS = FIFTEEN_MINTUTES_IN_SECONDS
+from ctypes import windll
+windll.shcore.SetProcessDpiAwareness(1)
 
-from config import SCREEN_GEOMETRY, BACKGROUND_COLOR, TEXT_COLOR, FONT, DEFAULT_ALPHA
-WINDOWS_TASKBAR_HEIGHT_IN_PIXELS = 48
+FIFTEEN_MINTUTES_IN_SECONDS = 60 * 15
+FETCH_INTERVAL_MILLISECONDS = FIFTEEN_MINTUTES_IN_SECONDS * 1000
+
+from fetch import fetch_current_event_names
+from config import (
+    SCREEN_GEOMETRY, BACKGROUND_COLOR, TEXT_COLOR, FONT, DEFAULT_ALPHA,
+    WINDOW_WIDTH, WINDOW_HEIGHT, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS
+)
 
 def loadfont(fontpath, private=True, enumerable=False):
     from ctypes import windll, byref, create_unicode_buffer, create_string_buffer
@@ -47,6 +51,8 @@ def get_current_screen_width_height() -> tuple[int, int]:
     if SCREEN_GEOMETRY is not None:
         return SCREEN_GEOMETRY
     
+    import re
+    
     # Find `screen_geometry` by creating a full-screen temporary Tkinter window in current screen
     root = tk.Tk()
     root.update_idletasks()
@@ -60,6 +66,8 @@ def get_current_screen_width_height() -> tuple[int, int]:
         raise ValueError(f'Received invalid object: {screen_geometry=}')
     
     screen_width, screen_height = map(int, match.groups())
+    print(f"Your screen dimensions are: ({screen_width}, {screen_height}).")
+    print(f"Input them to the config.py file to speed up GUI initialisation!")
     return screen_width, screen_height
 
 def get_window_geometry(window_width: int, window_height: int) -> str:
@@ -83,8 +91,8 @@ class Overlay(tk.Tk):
         self.config(bg=BACKGROUND_COLOR)
         self.attributes('-alpha', DEFAULT_ALPHA)
         self.geometry(get_window_geometry(
-            window_width  = 100,
-            window_height = 30
+            window_width  = WINDOW_WIDTH,
+            window_height = WINDOW_HEIGHT
         ))
 
         self.label_text: tk.StringVar = tk.StringVar(value='No current event')
@@ -102,7 +110,7 @@ class Overlay(tk.Tk):
         event_names = fetch_current_event_names()
         text = ' ⋅ '.join(event_names)
         self.label_text.set(value=text)
-        self.after(FETCH_INTERVAL_SECONDS, self.update_label)
+        self.after(FETCH_INTERVAL_MILLISECONDS, self.update_label)
 
 
 if __name__ == '__main__':

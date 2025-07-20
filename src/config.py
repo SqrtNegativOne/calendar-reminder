@@ -9,9 +9,18 @@
 # Size of your screen; (width, height) in pixels.
 # This is used to position the overlay window correctly.
 # Use `None` to force the application to calculate it upon initialisation.
-SCREEN_GEOMETRY: tuple[int, int] | None = (1536, 960)
+SCREEN_GEOMETRY: tuple[int, int] | None = (1920, 1200) # In reality it's (1536, 960) but windll DPI awareness messes stuff up...
+WINDOWS_TASKBAR_HEIGHT_IN_PIXELS = 58 # In reality it's 48 but windll DPI awareness messes stuff up...
 
-BACKGROUND_COLOR = "#000000"
-TEXT_COLOR = "#FFFFFF"
-FONT = "fs-sevegment"
-DEFAULT_ALPHA = 0.8
+WINDOW_WIDTH: int = 300
+WINDOW_HEIGHT: int = 30
+
+BACKGROUND_COLOR: str = "#000000"
+TEXT_COLOR: str = "#FFFFFF"
+FONT: str = "fs-sevegment"
+DEFAULT_ALPHA: float = 0.8
+
+
+
+if __name__ == '__main__':
+    print('This program isn\'t meant to be run directly. Run the `reminder.py` file instead.')
