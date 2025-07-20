@@ -1,4 +1,6 @@
-from datetime import datetime, timezone, time
+from datetime import datetime, timezone
+
+from config import MAX_TASK_LENGTH, MAX_RESULTS_TO_FETCH_PER_CALENDAR
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -6,11 +8,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-import os
-
 SCOPES = ['https://www.googleapis.com/auth/calendar']
-
-MAX_RESULTS_TO_FETCH_PER_CALENDAR = 3  # Maximum number of calendar items to fetch
 
 from pathlib import Path
 SECRETS_PATH = Path(__file__).parent.parent / 'secrets'
@@ -38,16 +36,15 @@ def get_credentials():
     return creds
 
 def fetch_current_event_names_from_calendar(service, calendar_id) -> list[str]:
-    now = datetime.now(timezone.utc)
-    now_iso_format = now.isoformat()
+    utc_now = datetime.now(timezone.utc)
     try:
         events_response = (
             service.events()
             .list(
                 calendarId=calendar_id,
-                timeMin=now_iso_format,
-                timeMax=now_iso_format,
-                maxResults=MAX_RESULTS_TO_FETCH_PER_CALENDAR,  # Don't fetch more than we need
+                timeMin=(utc_now - MAX_TASK_LENGTH).isoformat(),
+                timeMax=(utc_now + MAX_TASK_LENGTH).isoformat(),
+                maxResults=MAX_RESULTS_TO_FETCH_PER_CALENDAR,
                 singleEvents=True,
                 orderBy="startTime",
             )
@@ -66,7 +63,7 @@ def fetch_current_event_names_from_calendar(service, calendar_id) -> list[str]:
     for event in event_objects:
         start = datetime.fromisoformat(event['start'].get('dateTime', event['start'].get('date')))
         end = datetime.fromisoformat(event['end'].get('dateTime', event['end'].get('date')))
-        if start <= now < end:
+        if start <= utc_now < end:
             current_event_names.append(event['summary'])
     
     return current_event_names

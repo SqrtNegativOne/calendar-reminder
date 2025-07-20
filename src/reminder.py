@@ -108,7 +108,10 @@ class Overlay(tk.Tk):
     
     def update_label(self):
         event_names = fetch_current_event_names()
-        text = ' ⋅ '.join(event_names)
+        if not event_names:
+            text = 'No current event.'
+        else:
+            text = ' ⋅ '.join(event_names)
         self.label_text.set(value=text)
         self.after(FETCH_INTERVAL_MILLISECONDS, self.update_label)
 
