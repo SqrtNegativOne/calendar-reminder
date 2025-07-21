@@ -20,12 +20,13 @@ SCREEN_GEOMETRY: tuple[int, int] | None = (1920, 1200) # In reality it's (1536, 
 WINDOWS_TASKBAR_HEIGHT_IN_PIXELS = 60 # In reality it's 48 but windll DPI awareness multiplies it by 1.25
 
 WINDOW_WIDTH: int = 300
-WINDOW_HEIGHT: int = 30
+WINDOW_HEIGHT: int = 28
 
-BACKGROUND_COLOR: str = "#000000"
+BACKGROUND_COLOR: str = '#181818'
 TEXT_COLOR: str = "#FFFFFF"
 FONT: str = "fs-sevegment"
-DEFAULT_ALPHA: float = 0.8
+DEFAULT_ALPHA: float = 0.7
+HIDING_ALPHA: float = 0.2
 
 
 

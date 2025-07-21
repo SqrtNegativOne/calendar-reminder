@@ -10,7 +10,7 @@ FETCH_INTERVAL_MILLISECONDS = FIFTEEN_MINTUTES_IN_SECONDS * 1000
 
 from fetch import fetch_current_event_names
 from config import (
-    SCREEN_GEOMETRY, BACKGROUND_COLOR, TEXT_COLOR, FONT, DEFAULT_ALPHA,
+    SCREEN_GEOMETRY, BACKGROUND_COLOR, TEXT_COLOR, FONT, DEFAULT_ALPHA, HIDING_ALPHA,
     WINDOW_WIDTH, WINDOW_HEIGHT, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS
 )
 
@@ -104,16 +104,37 @@ class Overlay(tk.Tk):
             bg=BACKGROUND_COLOR
         )
         label.pack()
-        self.update_label()
+
+        self.bind_everything()
+
+        self.run()
     
-    def update_label(self):
+    def bind_everything(self) -> None:
+        def Keypress(event):
+            if event.char == 'h':
+                self.hide()
+            elif event.char == 'r':
+                self.update_label_once()
+        self.bind('<Key>', Keypress)
+    
+    def update_label_once(self) -> None:
         event_names = fetch_current_event_names()
         if not event_names:
             text = 'No current event.'
         else:
             text = ' ⋅ '.join(event_names)
         self.label_text.set(value=text)
-        self.after(FETCH_INTERVAL_MILLISECONDS, self.update_label)
+
+    def run(self) -> None:
+        self.update_label_once()
+        self.after(FETCH_INTERVAL_MILLISECONDS, self.run)
+    
+    def hide(self) -> None:
+        if self.alpha == DEFAULT_ALPHA:
+            self.alpha = HIDING_ALPHA
+        elif self.alpha == HIDING_ALPHA:
+            self.alpha = DEFAULT_ALPHA
+        self.attributes('-alpha', self.alpha)
 
 
 if __name__ == '__main__':
