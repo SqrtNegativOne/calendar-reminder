@@ -11,7 +11,7 @@ FETCH_INTERVAL_MILLISECONDS = FIFTEEN_MINTUTES_IN_SECONDS * 1000
 from fetch import fetch_current_event_names
 from config import (
     SCREEN_GEOMETRY, BACKGROUND_COLOR, TEXT_COLOR, FONT, DEFAULT_ALPHA, HIDING_ALPHA,
-    WINDOW_WIDTH, WINDOW_HEIGHT, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS
+    DEFAULT_MESSAGE, WINDOW_WIDTH, WINDOW_HEIGHT, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS
 )
 
 def loadfont(fontpath, private=True, enumerable=False):
@@ -95,7 +95,7 @@ class Overlay(tk.Tk):
             window_height = WINDOW_HEIGHT
         ))
 
-        self.label_text: tk.StringVar = tk.StringVar(value='No current event')
+        self.label_text: tk.StringVar = tk.StringVar(value=DEFAULT_MESSAGE)
         label: tk.Label = tk.Label(
             self,
             textvariable=self.label_text,
