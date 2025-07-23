@@ -25,10 +25,12 @@ WINDOW_HEIGHT: int = 28
 BACKGROUND_COLOR: str = '#181818'
 TEXT_COLOR: str = "#FFFFFF"
 FONT: str = "fs-sevegment"
+
+NO_CURRENT_EVENT_ALPHA: float = 0.2
 DEFAULT_ALPHA: float = 0.7
 HIDING_ALPHA: float = 0.2
 
-DEFAULT_MESSAGE: str = '~no current event~'
+NO_CURRENT_EVENT_MESSAGE: str = '~no current event~'
 
 
 

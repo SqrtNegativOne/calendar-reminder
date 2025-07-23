@@ -10,8 +10,8 @@ FETCH_INTERVAL_MILLISECONDS = FIFTEEN_MINTUTES_IN_SECONDS * 1000
 
 from fetch import fetch_current_event_names
 from config import (
-    SCREEN_GEOMETRY, BACKGROUND_COLOR, TEXT_COLOR, FONT, DEFAULT_ALPHA, HIDING_ALPHA,
-    DEFAULT_MESSAGE, WINDOW_WIDTH, WINDOW_HEIGHT, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS
+    SCREEN_GEOMETRY, BACKGROUND_COLOR, TEXT_COLOR, FONT, DEFAULT_ALPHA, HIDING_ALPHA, NO_CURRENT_EVENT_ALPHA,
+    NO_CURRENT_EVENT_MESSAGE, WINDOW_WIDTH, WINDOW_HEIGHT, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS
 )
 
 def loadfont(fontpath, private=True, enumerable=False):
@@ -89,13 +89,15 @@ class Overlay(tk.Tk):
         self.attributes('-topmost', True)
 
         self.config(bg=BACKGROUND_COLOR)
+        self.alpha = NO_CURRENT_EVENT_ALPHA
         self.attributes('-alpha', DEFAULT_ALPHA)
-        self.geometry(get_window_geometry(
+        self.geometry_string = get_window_geometry(
             window_width  = WINDOW_WIDTH,
             window_height = WINDOW_HEIGHT
-        ))
+        )
+        self.geometry(self.geometry_string)
 
-        self.label_text: tk.StringVar = tk.StringVar(value=DEFAULT_MESSAGE)
+        self.label_text: tk.StringVar = tk.StringVar(value=NO_CURRENT_EVENT_MESSAGE)
         label: tk.Label = tk.Label(
             self,
             textvariable=self.label_text,
@@ -115,12 +117,40 @@ class Overlay(tk.Tk):
                 self.hide()
             elif event.char == 'r':
                 self.update_label_once()
+            elif event.char == 'c':
+                self.geometry_string = get_window_geometry(
+                    window_width  = WINDOW_WIDTH,
+                    window_height = WINDOW_HEIGHT
+                )
+                self.geometry(self.geometry_string)
         self.bind('<Key>', Keypress)
+
+        self.x = 0
+        self.bind('<Button-1>', self.click)
+        self.bind('<B1-Motion>', self.drag)
+        self.bind('<Enter>', self.hover)
+        self.bind('<Leave>', self.mouse_leave)
+    
+    def click(self, event) -> None:
+        self.x = event.x
+        self.attributes('-alpha', self.alpha-0.1)
+
+    def drag(self, event) -> None:
+        x = event.x - self.x + self.winfo_x()
+        y = self.winfo_y()
+        self.geometry(f'+{x}+{y}')
+        self.attributes('-alpha', self.alpha-0.1)
+
+    def mouse_leave(self, event) -> None:
+        self.attributes('-alpha', self.alpha)
+    
+    def hover(self, event) -> None:
+        self.attributes('-alpha', self.alpha-0.1)
     
     def update_label_once(self) -> None:
         event_names = fetch_current_event_names()
         if not event_names:
-            text = 'No current event.'
+            text = NO_CURRENT_EVENT_MESSAGE
         else:
             text = ' ⋅ '.join(event_names)
         self.label_text.set(value=text)
