@@ -8,7 +8,6 @@ MAX_TASK_LENGTH = timedelta(hours=2)
 # Maximum calendar items to fetch within the MAX_TASK_LENGTH duration.
 MAX_RESULTS_TO_FETCH_PER_CALENDAR = 5
 
-
 # -------------------------------------------------
 # REMINDER APP CONFIGURATION
 # -------------------------------------------------
@@ -16,8 +15,9 @@ MAX_RESULTS_TO_FETCH_PER_CALENDAR = 5
 # Size of your screen; (width, height) in pixels.
 # This is used to position the overlay window correctly.
 # Use `None` to force the application to calculate it upon initialisation.
-SCREEN_GEOMETRY: tuple[int, int] | None = (1920, 1200) # (1536, 960) but windll DPI awareness multiplies it by 1.25
-WINDOWS_TASKBAR_HEIGHT_IN_PIXELS = 60                  # 48 but windll DPI awareness multiplies it by 1.25
+# Note: windll DPI awareness multiplies pixel sizes by 1.25. So (1536, 960)→(1960, 1200), 48→60
+SCREEN_GEOMETRY: tuple[int, int] | None = (1920, 1200)
+WINDOWS_TASKBAR_HEIGHT_IN_PIXELS = 60
 
 MAX_CHAR_WIDTH_PIXEL_COUNT: int = 10 # Maximum width of a character in the font used, in pixels. Used to calculate window width.
 # WINDOW_WIDTH: int = 300
@@ -38,4 +38,4 @@ NO_CURRENT_EVENT_MESSAGE: str = '~no current event~'
 
 
 if __name__ == '__main__':
-    print('This program isn\'t meant to be run directly. Run the `reminder.py` file instead.')
+    print('The `config.py` file isn\'t meant to be run directly. Run the `reminder.py` file instead.')

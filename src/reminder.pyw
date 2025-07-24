@@ -53,7 +53,7 @@ def get_current_screen_width_height() -> tuple[int, int]:
     if SCREEN_GEOMETRY is not None:
         return SCREEN_GEOMETRY
     
-    import re
+    from re import fullmatch
     
     # Find `screen_geometry` by creating a full-screen temporary Tkinter window in current screen
     root = tk.Tk()
@@ -63,7 +63,7 @@ def get_current_screen_width_height() -> tuple[int, int]:
     screen_geometry = root.winfo_geometry()
     root.destroy()
 
-    match = re.fullmatch(r"(\d+)x(\d+)\+\d+\+\d+", screen_geometry)
+    match = fullmatch(r"(\d+)x(\d+)\+\d+\+\d+", screen_geometry)
     if not match:
         raise ValueError(f'Received invalid object: {screen_geometry=}')
     
