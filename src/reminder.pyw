@@ -10,8 +10,10 @@ FETCH_INTERVAL_MILLISECONDS = FIFTEEN_MINTUTES_IN_SECONDS * 1000
 
 from fetch import fetch_current_event_names
 from config import (
-    SCREEN_GEOMETRY, BACKGROUND_COLOR, TEXT_COLOR, FONT, DEFAULT_ALPHA, HIDING_ALPHA, NO_CURRENT_EVENT_ALPHA,
-    NO_CURRENT_EVENT_MESSAGE, INIT_MESSAGE, WINDOW_WIDTH, WINDOW_HEIGHT, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS
+    SCREEN_GEOMETRY, BACKGROUND_COLOR, TEXT_COLOR,
+    DEFAULT_ALPHA, HIDING_ALPHA, NO_CURRENT_EVENT_ALPHA, MOUSE_HOVER_ALPHA_CHANGE, MOUSE_CLICK_ALPHA_CHANGE,
+    NO_CURRENT_EVENT_MESSAGE, INIT_MESSAGE,
+    MAX_CHAR_WIDTH_PIXEL_COUNT, WINDOW_HEIGHT, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS
 )
 
 def loadfont(fontpath, private=True, enumerable=False):
@@ -81,26 +83,22 @@ def get_window_geometry(window_width: int, window_height: int) -> str:
 class Overlay(tk.Tk):
     def __init__(self, *args, **kwargs) -> None:
         self.logger = logging.getLogger('Overlay')
-        self.logger.info('Stopwatch initialised.')
+        self.logger.info('Overlay window initialised.')
 
         tk.Tk.__init__(self, *args, **kwargs)
         self.overrideredirect(True) # Rips out the titlebar
         self.attributes('-topmost', True)
+        self.protocol("WM_DELETE_WINDOW", lambda: self.logger.info('Overlay kill attempted.')) # Disables Alt-F4
 
         self.config(bg=BACKGROUND_COLOR)
-        self.alpha = DEFAULT_ALPHA
-        self.geometry_string = get_window_geometry(
-            window_width  = WINDOW_WIDTH,
-            window_height = WINDOW_HEIGHT
-        )
-        self.geometry(self.geometry_string)
+        self.set_geometry(INIT_MESSAGE)
 
         self.label_text: tk.StringVar = tk.StringVar(value=INIT_MESSAGE)
         label: tk.Label = tk.Label(
             self,
             textvariable=self.label_text,
             foreground=TEXT_COLOR,
-            font=FONT,
+            # font=FONT,
             bg=BACKGROUND_COLOR
         )
         label.pack()
@@ -109,6 +107,14 @@ class Overlay(tk.Tk):
 
         self.run()
     
+    def set_geometry(self, message: str) -> None:
+        self.geometry(
+            get_window_geometry(
+                window_width  = MAX_CHAR_WIDTH_PIXEL_COUNT * len(message),
+                window_height = WINDOW_HEIGHT
+            )
+        )
+    
     def bind_everything(self) -> None:
         def Keypress(event):
             if event.char == 'h':
@@ -116,11 +122,7 @@ class Overlay(tk.Tk):
             elif event.char == 'r':
                 self.update_label_once()
             elif event.char == 'c':
-                self.geometry_string = get_window_geometry(
-                    window_width  = WINDOW_WIDTH,
-                    window_height = WINDOW_HEIGHT
-                )
-                self.geometry(self.geometry_string)
+                self.set_geometry(str(self.label_text))
         self.bind('<Key>', Keypress)
 
         self.x = 0
@@ -131,19 +133,19 @@ class Overlay(tk.Tk):
     
     def click(self, event) -> None:
         self.x = event.x
-        self.attributes('-alpha', self.alpha-0.1)
+        self.attributes('-alpha', self.alpha-MOUSE_CLICK_ALPHA_CHANGE)
 
     def drag(self, event) -> None:
         x = event.x - self.x + self.winfo_x()
         y = self.winfo_y()
         self.geometry(f'+{x}+{y}')
-        self.attributes('-alpha', self.alpha-0.1)
+        self.attributes('-alpha', self.alpha-MOUSE_HOVER_ALPHA_CHANGE)
 
     def mouse_leave(self, event) -> None:
         self.attributes('-alpha', self.alpha)
     
     def hover(self, event) -> None:
-        self.attributes('-alpha', self.alpha-0.1)
+        self.attributes('-alpha', self.alpha-MOUSE_HOVER_ALPHA_CHANGE)
     
     def update_label_once(self) -> None:
         event_names = fetch_current_event_names()
@@ -153,6 +155,7 @@ class Overlay(tk.Tk):
         else:
             text = ' ⋅ '.join(event_names)
             self.alpha = DEFAULT_ALPHA
+        self.set_geometry(text)
         self.label_text.set(value=text)
         self.attributes('-alpha', self.alpha)
 

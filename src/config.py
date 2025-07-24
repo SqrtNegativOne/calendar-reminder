@@ -19,16 +19,18 @@ MAX_RESULTS_TO_FETCH_PER_CALENDAR = 5
 SCREEN_GEOMETRY: tuple[int, int] | None = (1920, 1200) # (1536, 960) but windll DPI awareness multiplies it by 1.25
 WINDOWS_TASKBAR_HEIGHT_IN_PIXELS = 60                  # 48 but windll DPI awareness multiplies it by 1.25
 
-WINDOW_WIDTH: int = 300
+MAX_CHAR_WIDTH_PIXEL_COUNT: int = 10 # Maximum width of a character in the font used, in pixels. Used to calculate window width.
+# WINDOW_WIDTH: int = 300
 WINDOW_HEIGHT: int = 28
 
 BACKGROUND_COLOR: str = '#181818'
 TEXT_COLOR: str = "#FFFFFF"
-FONT: str = "fs-sevegment"
 
-NO_CURRENT_EVENT_ALPHA: float = 0.2
-DEFAULT_ALPHA: float = 0.7
-HIDING_ALPHA: float = 0.2
+NO_CURRENT_EVENT_ALPHA: float   = 0.2
+DEFAULT_ALPHA: float            = 0.7
+HIDING_ALPHA: float             = 0.2
+MOUSE_HOVER_ALPHA_CHANGE: float = 0.1
+MOUSE_CLICK_ALPHA_CHANGE: float = 0.15
 
 INIT_MESSAGE: str = '~initialized~'
 NO_CURRENT_EVENT_MESSAGE: str = '~no current event~'
