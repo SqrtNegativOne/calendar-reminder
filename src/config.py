@@ -30,6 +30,7 @@ NO_CURRENT_EVENT_ALPHA: float = 0.2
 DEFAULT_ALPHA: float = 0.7
 HIDING_ALPHA: float = 0.2
 
+INIT_MESSAGE: str = '~initialized~'
 NO_CURRENT_EVENT_MESSAGE: str = '~no current event~'
 
 

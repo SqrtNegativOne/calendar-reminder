@@ -11,7 +11,7 @@ FETCH_INTERVAL_MILLISECONDS = FIFTEEN_MINTUTES_IN_SECONDS * 1000
 from fetch import fetch_current_event_names
 from config import (
     SCREEN_GEOMETRY, BACKGROUND_COLOR, TEXT_COLOR, FONT, DEFAULT_ALPHA, HIDING_ALPHA, NO_CURRENT_EVENT_ALPHA,
-    NO_CURRENT_EVENT_MESSAGE, WINDOW_WIDTH, WINDOW_HEIGHT, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS
+    NO_CURRENT_EVENT_MESSAGE, INIT_MESSAGE, WINDOW_WIDTH, WINDOW_HEIGHT, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS
 )
 
 def loadfont(fontpath, private=True, enumerable=False):
@@ -78,7 +78,6 @@ def get_window_geometry(window_width: int, window_height: int) -> str:
 
     return f'{window_width}x{window_height}+{window_left}+{window_top}'
 
-
 class Overlay(tk.Tk):
     def __init__(self, *args, **kwargs) -> None:
         self.logger = logging.getLogger('Overlay')
@@ -89,15 +88,14 @@ class Overlay(tk.Tk):
         self.attributes('-topmost', True)
 
         self.config(bg=BACKGROUND_COLOR)
-        self.alpha = NO_CURRENT_EVENT_ALPHA
-        self.attributes('-alpha', DEFAULT_ALPHA)
+        self.alpha = DEFAULT_ALPHA
         self.geometry_string = get_window_geometry(
             window_width  = WINDOW_WIDTH,
             window_height = WINDOW_HEIGHT
         )
         self.geometry(self.geometry_string)
 
-        self.label_text: tk.StringVar = tk.StringVar(value=NO_CURRENT_EVENT_MESSAGE)
+        self.label_text: tk.StringVar = tk.StringVar(value=INIT_MESSAGE)
         label: tk.Label = tk.Label(
             self,
             textvariable=self.label_text,
@@ -151,9 +149,12 @@ class Overlay(tk.Tk):
         event_names = fetch_current_event_names()
         if not event_names:
             text = NO_CURRENT_EVENT_MESSAGE
+            self.alpha = NO_CURRENT_EVENT_ALPHA
         else:
             text = ' ⋅ '.join(event_names)
+            self.alpha = DEFAULT_ALPHA
         self.label_text.set(value=text)
+        self.attributes('-alpha', self.alpha)
 
     def run(self) -> None:
         self.update_label_once()
