@@ -1,20 +1,22 @@
 import tkinter as tk
+from datetime import datetime
 import logging
 logging.basicConfig(level=logging.INFO)
 
 from ctypes import windll
 windll.shcore.SetProcessDpiAwareness(1)
 
-FIFTEEN_MINTUTES_IN_SECONDS = 60 * 15
-FETCH_INTERVAL_MILLISECONDS = FIFTEEN_MINTUTES_IN_SECONDS * 1000
-
 from fetch import fetch_current_event_names
 from config import (
     SCREEN_GEOMETRY, BACKGROUND_COLOR, TEXT_COLOR,
     DEFAULT_ALPHA, HIDING_ALPHA, NO_CURRENT_EVENT_ALPHA, MOUSE_HOVER_ALPHA_CHANGE, MOUSE_CLICK_ALPHA_CHANGE,
     NO_CURRENT_EVENT_MESSAGE, INIT_MESSAGE,
-    MAX_CHAR_WIDTH_PIXEL_COUNT, WINDOW_HEIGHT, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS
+    MAX_CHAR_WIDTH_PIXEL_COUNT, WINDOW_HEIGHT, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS,
+    FETCH_INTERVAL_MINUTES
 )
+
+MINUTE_IN_MILLISECONDS: int = 60 * 1000
+FETCH_INTERVAL_MILLISECONDS: int = FETCH_INTERVAL_MINUTES * MINUTE_IN_MILLISECONDS
 
 def loadfont(fontpath, private=True, enumerable=False):
     from ctypes import windll, byref, create_unicode_buffer, create_string_buffer
@@ -105,7 +107,7 @@ class Overlay(tk.Tk):
 
         self.bind_everything()
 
-        self.run()
+        self.init_run()
     
     def set_geometry(self, message: str) -> None:
         self.geometry(
@@ -158,6 +160,11 @@ class Overlay(tk.Tk):
         self.set_geometry(text)
         self.label_text.set(value=text)
         self.attributes('-alpha', self.alpha)
+    
+    def init_run(self) -> None:
+        self.update_label_once()
+        minutes_till_next_interval: int = FETCH_INTERVAL_MINUTES - int(datetime.now().minute) % FETCH_INTERVAL_MINUTES
+        self.after(minutes_till_next_interval * MINUTE_IN_MILLISECONDS, self.run)
 
     def run(self) -> None:
         self.update_label_once()
