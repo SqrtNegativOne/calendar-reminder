@@ -12,3 +12,6 @@ wheels/
 secrets
 
 .env
+
+# Logging file. Loguru default settings can leak things in production.
+out.log

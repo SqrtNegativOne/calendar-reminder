@@ -1,7 +1,6 @@
 import tkinter as tk
 from datetime import datetime
-import logging
-logging.basicConfig(level=logging.INFO)
+from loguru import logger
 
 from ctypes import windll
 windll.shcore.SetProcessDpiAwareness(1)
@@ -12,8 +11,11 @@ from config import (
     DEFAULT_ALPHA, HIDING_ALPHA, NO_CURRENT_EVENT_ALPHA, MOUSE_HOVER_ALPHA_CHANGE, MOUSE_CLICK_ALPHA_CHANGE,
     NO_CURRENT_EVENT_MESSAGE, INIT_MESSAGE,
     MAX_CHAR_WIDTH_PIXEL_COUNT, WINDOW_HEIGHT, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS,
-    FETCH_INTERVAL_MINUTES
+    FETCH_INTERVAL_MINUTES,
+    LOG_FILE_PATH
 )
+
+logger.add(LOG_FILE_PATH)
 
 MINUTE_IN_MILLISECONDS: int = 60 * 1000
 FETCH_INTERVAL_MILLISECONDS: int = FETCH_INTERVAL_MINUTES * MINUTE_IN_MILLISECONDS
@@ -84,13 +86,12 @@ def get_window_geometry(window_width: int, window_height: int) -> str:
 
 class Overlay(tk.Tk):
     def __init__(self, *args, **kwargs) -> None:
-        self.logger = logging.getLogger('Overlay')
-        self.logger.info('Overlay window initialised.')
+        logger.info('Overlay window initialised.')
 
         tk.Tk.__init__(self, *args, **kwargs)
         self.overrideredirect(True) # Rips out the titlebar
         self.attributes('-topmost', True)
-        self.protocol("WM_DELETE_WINDOW", lambda: self.logger.info('Overlay kill attempted.')) # Disables Alt-F4
+        self.protocol("WM_DELETE_WINDOW", lambda: logger.info('Overlay kill attempted.')) # Disables Alt-F4
 
         self.config(bg=BACKGROUND_COLOR)
         self.set_geometry(INIT_MESSAGE)
@@ -124,7 +125,7 @@ class Overlay(tk.Tk):
             elif event.char == 'r':
                 self.update_label_once()
             elif event.char == 'c':
-                self.set_geometry(str(self.label_text))
+                self.set_geometry(str(self.label_text)) # TODO: fix bug.
         self.bind('<Key>', Keypress)
 
         self.x = 0

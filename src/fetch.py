@@ -1,6 +1,10 @@
 from datetime import datetime, timezone
 
-from config import MAX_TASK_LENGTH, MAX_RESULTS_TO_FETCH_PER_CALENDAR
+from config import (
+    MAX_TASK_LENGTH, MAX_RESULTS_TO_FETCH_PER_CALENDAR,
+    TOKEN_PATH, CREDENTIALS_PATH,
+    LOG_FILE_PATH
+)
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -10,14 +14,8 @@ from googleapiclient.errors import HttpError
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
-from pathlib import Path
-SECRETS_PATH = Path(__file__).parent.parent / 'secrets'
-TOKEN_PATH = SECRETS_PATH / 'token.json'
-CREDENTIALS_PATH = SECRETS_PATH / 'credentials.json'
-
-import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from loguru import logger
+logger.add(LOG_FILE_PATH)
 
 def get_credentials():
     creds = None
@@ -51,12 +49,12 @@ def fetch_current_event_names_from_calendar(service, calendar_id) -> list[str]:
             .execute()
         )
     except HttpError as error:
-        logging.error(f"Error fetching calendar items: {error}")
+        logger.error(f"Error fetching calendar items: {error}")
         return []
     
     event_objects = events_response.get('items', None)
     if event_objects is None:
-        logging.error(f"The returned dictionary did not have an items attribute despite no HttpErrors. Shouldn't be possible.")
+        logger.error(f"The returned dictionary did not have an items attribute despite no HttpErrors. Shouldn't be possible.")
         return []
     
     current_event_names = []
@@ -69,6 +67,7 @@ def fetch_current_event_names_from_calendar(service, calendar_id) -> list[str]:
     return current_event_names
 
 def fetch_current_event_names() -> list[str]:
+    logger.info('Fetching current event names.')
     service = build('calendar', 'v3', credentials=get_credentials())
     calendar_list = service.calendarList().list().execute()
     calendar_ids = [calendar['id'] for calendar in calendar_list.get('items', [])]
@@ -76,7 +75,8 @@ def fetch_current_event_names() -> list[str]:
     current_events = []
     for calendar_id in calendar_ids:
         current_events.extend(fetch_current_event_names_from_calendar(service, calendar_id))
+    logger.info('Fetched event names.')
     return current_events
 
-if __name__ == '__main__': # Not really meant to be run directly but if it is...
-    print(fetch_current_event_names())
+if __name__ == '__main__': # Not meant to be run directly but if it is...
+    logger.info(fetch_current_event_names())
