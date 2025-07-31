@@ -8,30 +8,51 @@ from config import (
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
+from google.auth.credentials import Credentials as CredentialsType  # for typechecking
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 from loguru import logger
 logger.add(LOG_FILE_PATH)
 
+def save_credentials(creds):
+    with open(TOKEN_PATH, 'w') as token:
+        token.write(creds.to_json())
+
+def get_credentials_online():
+    flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
+    creds = flow.run_local_server(port=0)
+    return creds
+
 def get_credentials():
     creds = None
     if TOKEN_PATH.exists():
-        creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
-    
+        try:
+            creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+        except Exception as e:
+            logger.warning(f"Failed to load credentials from token file: {e}")
+            TOKEN_PATH.unlink(missing_ok=True)
+            creds = None
+
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
+            try:
+                creds.refresh(Request())
+            except Exception as e:
+                logger.warning(f"Refresh token failed: {e}. Re-authenticating.")
+                TOKEN_PATH.unlink(missing_ok=True)
+                creds = get_credentials_online()
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with open(TOKEN_PATH, 'w') as token:
-            token.write(creds.to_json())
+            creds = get_credentials_online()
+        
+        save_credentials(creds)
+
     return creds
+
 
 def fetch_current_event_names_from_calendar(service, calendar_id) -> list[str]:
     utc_now = datetime.now(timezone.utc)
