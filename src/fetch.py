@@ -88,7 +88,7 @@ def fetch_current_event_names_from_calendar(service, calendar_id) -> list[str]:
     return current_event_names
 
 def fetch_current_event_names() -> list[str]:
-    logger.info('Fetching current event names.')
+    logger.info('Fetching current event names...')
     service = build('calendar', 'v3', credentials=get_credentials())
     calendar_list = service.calendarList().list().execute()
     calendar_ids = [calendar['id'] for calendar in calendar_list.get('items', [])]

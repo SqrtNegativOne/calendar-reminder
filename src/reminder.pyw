@@ -165,6 +165,7 @@ class Overlay(tk.Tk):
     def init_run(self) -> None:
         self.update_label_once()
         minutes_till_next_interval: int = FETCH_INTERVAL_MINUTES - int(datetime.now().minute) % FETCH_INTERVAL_MINUTES
+        logger.info(f'Label updated with current events. Setting next update in {minutes_till_next_interval} minutes.')
         self.after(minutes_till_next_interval * MINUTE_IN_MILLISECONDS, self.run)
 
     def run(self) -> None:
