@@ -53,6 +53,15 @@ def get_credentials():
 
     return creds
 
+def parse_event_datetime(event_time: dict) -> datetime | None:
+    if "dateTime" in event_time:
+        # Offset-aware datetime with timezone info
+        return datetime.fromisoformat(event_time["dateTime"])
+    elif "date" in event_time:
+        # All-day event → do nothing.
+        return None
+    else:
+        raise ValueError(f"Unexpected event time format: {event_time}")
 
 def fetch_current_event_names_from_calendar(service, calendar_id) -> list[str]:
     utc_now = datetime.now(timezone.utc)
@@ -80,10 +89,12 @@ def fetch_current_event_names_from_calendar(service, calendar_id) -> list[str]:
     
     current_event_names = []
     for event in event_objects:
-        start = datetime.fromisoformat(event['start'].get('dateTime', event['start'].get('date')))
-        end = datetime.fromisoformat(event['end'].get('dateTime', event['end'].get('date')))
+        start = parse_event_datetime(event["start"])
+        end = parse_event_datetime(event["end"])
+        if not start or not end:
+            continue
         if start <= utc_now < end:
-            current_event_names.append(event['summary'])
+            current_event_names.append(event["summary"])
     
     return current_event_names
 
