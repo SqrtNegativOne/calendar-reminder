@@ -10,7 +10,7 @@ from config import (
     SCREEN_GEOMETRY, BACKGROUND_COLOR, TEXT_COLOR,
     DEFAULT_ALPHA, HIDING_ALPHA, NO_CURRENT_EVENT_ALPHA, MOUSE_HOVER_ALPHA_CHANGE, MOUSE_CLICK_ALPHA_CHANGE,
     NO_CURRENT_EVENT_MESSAGE, INIT_MESSAGE,
-    MAX_CHAR_WIDTH_PIXEL_COUNT, WINDOW_HEIGHT, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS,
+    MAX_CHAR_WIDTH_PIXEL_COUNT, WINDOW_HEIGHT, MIN_WINDOW_WIDTH, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS,
     FETCH_INTERVAL_MINUTES,
     LOG_FILE_PATH
 )
@@ -113,7 +113,7 @@ class Overlay(tk.Tk):
     def set_geometry(self, message: str) -> None:
         self.geometry(
             get_window_geometry(
-                window_width  = MAX_CHAR_WIDTH_PIXEL_COUNT * len(message),
+                window_width  = max(MAX_CHAR_WIDTH_PIXEL_COUNT * len(message), MIN_WINDOW_WIDTH),
                 window_height = WINDOW_HEIGHT
             )
         )

@@ -38,6 +38,7 @@ SCREEN_GEOMETRY: tuple[int, int] | None = (1920, 1200)
 WINDOWS_TASKBAR_HEIGHT_IN_PIXELS = 52 # for my custom windows taskbar. default is 60
 
 MAX_CHAR_WIDTH_PIXEL_COUNT: int = 10 # Maximum width of a character in the font used, in pixels. Used to calculate window width.
+MIN_WINDOW_WIDTH: int = 50 # Window width won't go lower than this.
 WINDOW_HEIGHT: int = 28
 
 BACKGROUND_COLOR: str =   '#181818'
