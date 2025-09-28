@@ -8,49 +8,36 @@ from config import (
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google.auth.credentials import Credentials as CredentialsType  # for typechecking
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 
-SCOPES = ['https://www.googleapis.com/auth/calendar']
+SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 
+from loguru import logger
 from loguru import logger
 logger.add(LOG_FILE_PATH)
 
-def save_credentials(creds):
-    with open(TOKEN_PATH, 'w') as token:
-        token.write(creds.to_json())
-
-def get_credentials_online():
-    flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
-    creds = flow.run_local_server(port=0)
-    return creds
-
 def get_credentials():
     creds = None
+    # The file token.json stores the user's access and refresh tokens, and is
+    # created automatically when the authorization flow completes for the first
+    # time.
     if TOKEN_PATH.exists():
-        try:
-            creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
-        except Exception as e:
-            logger.warning(f"Failed to load credentials from token file: {e}")
-            TOKEN_PATH.unlink(missing_ok=True)
-            creds = None
-
+        creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+    # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            try:
-                creds.refresh(Request())
-            except Exception as e:
-                logger.warning(f"Refresh token failed: {e}. Re-authenticating.")
-                TOKEN_PATH.unlink(missing_ok=True)
-                creds = get_credentials_online()
+            creds.refresh(Request())
         else:
-            creds = get_credentials_online()
-        
-        save_credentials(creds)
-
+            flow = InstalledAppFlow.from_client_secrets_file(
+                CREDENTIALS_PATH, SCOPES
+            )
+            creds = flow.run_local_server(port=0)
+        # Save the credentials for the next run
+        with TOKEN_PATH.open("w") as token:
+            token.write(creds.to_json())
     return creds
 
 def parse_event_datetime(event_time: dict) -> datetime | None:
