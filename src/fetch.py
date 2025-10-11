@@ -6,12 +6,6 @@ from config import (
     LOG_FILE_PATH
 )
 
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-
 
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 
@@ -19,25 +13,58 @@ from loguru import logger
 from loguru import logger
 logger.add(LOG_FILE_PATH)
 
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from google.auth.exceptions import RefreshError
+from pathlib import Path
+
+BASE_DIR = Path(__file__).parent.parent
+SECRETS_DIR = BASE_DIR / "secrets"
+TOKEN_PATH = SECRETS_DIR / "token.json"
+CREDENTIALS_PATH = SECRETS_DIR / "credentials.json"
+
 def get_credentials():
+    """Obtain valid Google API credentials, refreshing or reauthenticating as needed."""
+    logger.debug("Starting credential retrieval process.")
     creds = None
-    # The file token.json stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
+
+    # Load from file if exists
     if TOKEN_PATH.exists():
+        logger.debug(f"Loading credentials from {TOKEN_PATH}")
         creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
-    # If there are no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
+    else:
+        logger.debug("No existing token file found.")
+
+    # Check validity
+    if creds and creds.valid:
+        logger.debug("Existing credentials are valid; using cached token.")
+        return creds
+    
+    logger.debug("Credentials are invalid or missing.")
+    try:
         if creds and creds.expired and creds.refresh_token:
+            logger.debug("Attempting to refresh expired credentials.")
             creds.refresh(Request())
+            logger.info("Token refreshed successfully.")
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                CREDENTIALS_PATH, SCOPES
-            )
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with TOKEN_PATH.open("w") as token:
-            token.write(creds.to_json())
+            logger.debug("No valid refresh token available; initiating new auth flow.")
+            raise RefreshError()
+    except RefreshError as e:
+        logger.warning(f"Refresh failed ({e}); starting browser-based reauthentication.")
+        flow = InstalledAppFlow.from_client_secrets_file(
+            CREDENTIALS_PATH, SCOPES
+        )
+        creds = flow.run_local_server(port=0)
+        logger.info("User successfully reauthenticated via browser flow.")
+
+    # Save updated credentials
+    with TOKEN_PATH.open("w") as token:
+        token.write(creds.to_json())
+        logger.debug(f"Credentials saved to {TOKEN_PATH}")
+
     return creds
 
 def parse_event_datetime(event_time: dict) -> datetime | None:
@@ -98,4 +125,6 @@ def fetch_current_event_names() -> list[str]:
     return current_events
 
 if __name__ == '__main__': # Not meant to be run directly but if it is...
-    logger.info(fetch_current_event_names())
+    logger.info('Running fetch.py directly; fetching and printing current event names.')
+    print(fetch_current_event_names())
+    logger.info('fetch.py finished running.')
