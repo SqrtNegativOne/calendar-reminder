@@ -52,6 +52,7 @@ MOUSE_CLICK_ALPHA_CHANGE: float =       0.15
 
 INIT_MESSAGE: str = '~initialized~' # Only shown for a couple of milliseconds probably.
 NO_CURRENT_EVENT_MESSAGE: str = '~no current event~'
+REFRESHING_MESSAGE: str = '~updating~'
 
 
 if __name__ == '__main__':

@@ -10,7 +10,7 @@ from fetch import fetch_current_event_names
 from config import (
     SCREEN_GEOMETRY, BACKGROUND_COLOR, TEXT_COLOR,
     DEFAULT_ALPHA, HIDING_ALPHA, NO_CURRENT_EVENT_ALPHA, MOUSE_HOVER_ALPHA_CHANGE, MOUSE_CLICK_ALPHA_CHANGE,
-    NO_CURRENT_EVENT_MESSAGE, INIT_MESSAGE,
+    NO_CURRENT_EVENT_MESSAGE, INIT_MESSAGE, REFRESHING_MESSAGE,
     MAX_CHAR_WIDTH_PIXEL_COUNT, WINDOW_HEIGHT, MIN_WINDOW_WIDTH, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS,
     FETCH_INTERVAL_MINUTES,
     LOG_FILE_PATH
@@ -104,7 +104,7 @@ class Overlay(tk.Tk):
             if event.char == 'h':
                 self.hide()
             elif event.char == 'r':
-                self.update_label_once()
+                self.reset_refresh_timer()
             elif event.char == 'c':
                 self.set_geometry(str(self.label_text)) # TODO: fix bug.
         self.bind('<Key>', Keypress)
@@ -131,6 +131,13 @@ class Overlay(tk.Tk):
     def hover(self, event) -> None:
         self.attributes('-alpha', self.alpha-MOUSE_HOVER_ALPHA_CHANGE)
     
+    def reset_refresh_timer(self) -> None:
+        if hasattr(self, 'after_id'):
+            self.after_cancel(self.after_id)
+        self.label_text.set(value=REFRESHING_MESSAGE)
+        self.update_label_once()
+        self.after_id = self.after(FETCH_INTERVAL_MILLISECONDS, self.run)
+    
     def update_label_once(self) -> None:
         event_names = fetch_current_event_names()
         if not event_names:
@@ -149,11 +156,11 @@ class Overlay(tk.Tk):
         self.update_label_once()
         minutes_till_next_interval: int = FETCH_INTERVAL_MINUTES - int(datetime.now().minute) % FETCH_INTERVAL_MINUTES
         logger.info(f'Label updated with current events. Setting next update in {minutes_till_next_interval} minutes.')
-        self.after(minutes_till_next_interval * MINUTE_IN_MILLISECONDS, self.run)
+        self.after_id = self.after(minutes_till_next_interval * MINUTE_IN_MILLISECONDS, self.run)
 
     def run(self) -> None:
         self.update_label_once()
-        self.after(FETCH_INTERVAL_MILLISECONDS, self.run)
+        self.after_id = self.after(FETCH_INTERVAL_MILLISECONDS, self.run)
     
     def hide(self) -> None:
         if self.alpha == DEFAULT_ALPHA:
