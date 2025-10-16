@@ -6,7 +6,7 @@ from pathlib import Path
 BASE_PATH = Path(__file__).parent
 SECRETS_PATH = BASE_PATH.parent / 'secrets'
 
-TOKEN_PATH = SECRETS_PATH / 'token.json'
+CREDS_PATH = SECRETS_PATH / 'token.json'
 CREDENTIALS_PATH = SECRETS_PATH / 'credentials.json'
 
 LOG_FILE_PATH = BASE_PATH / 'out.log'

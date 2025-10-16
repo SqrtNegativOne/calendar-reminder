@@ -2,14 +2,13 @@ from datetime import datetime, timezone
 
 from config import (
     MAX_TASK_LENGTH, MAX_RESULTS_TO_FETCH_PER_CALENDAR,
-    TOKEN_PATH, CREDENTIALS_PATH,
+    CREDS_PATH, CREDENTIALS_PATH,
     LOG_FILE_PATH
 )
 
 
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 
-from loguru import logger
 from loguru import logger
 logger.add(LOG_FILE_PATH)
 
@@ -23,48 +22,52 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.parent
 SECRETS_DIR = BASE_DIR / "secrets"
-TOKEN_PATH = SECRETS_DIR / "token.json"
-CREDENTIALS_PATH = SECRETS_DIR / "credentials.json"
+CREDS_PATH = SECRETS_DIR / "token.json"
+
+def save_credentials(creds):
+    with CREDS_PATH.open("w") as cred_file:
+        cred_file.write(creds.to_json())
+        logger.debug(f"Credentials saved to {CREDS_PATH}")
+
+def reauthenticate_and_save():
+    logger.info("Starting browser-based reauthentication flow.")
+    flow = InstalledAppFlow.from_client_secrets_file(
+        CREDENTIALS_PATH, SCOPES
+    )
+    creds = flow.run_local_server(port=0)
+    logger.info("User successfully reauthenticated via browser flow.")
+
+    save_credentials(creds)
+    return creds
 
 def get_credentials():
     """Obtain valid Google API credentials, refreshing or reauthenticating as needed."""
-    logger.debug("Starting credential retrieval process.")
-    creds = None
+    logger.info("Starting credential retrieval process.")
 
-    # Load from file if exists
-    if TOKEN_PATH.exists():
-        logger.debug(f"Loading credentials from {TOKEN_PATH}")
-        creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
-    else:
-        logger.debug("No existing token file found.")
+    if not CREDS_PATH.exists():
+        logger.info(f"No credentials file found at {CREDS_PATH}.")
+        return reauthenticate_and_save()
 
-    # Check validity
-    if creds and creds.valid:
-        logger.debug("Existing credentials are valid; using cached token.")
+    logger.info(f"Loading credentials from {CREDS_PATH}")
+    creds = Credentials.from_authorized_user_file(CREDS_PATH, SCOPES)
+
+    if creds.valid:
+        logger.info("Existing credentials are valid.")
         return creds
+
+    if not creds.refresh_token or not creds.expired:
+        logger.info("Invalid credentials and either lack a refresh token or are not expired.")
+        return reauthenticate_and_save()
     
-    logger.debug("Credentials are invalid or missing.")
+    logger.debug("Credentials are expired and have a refresh token; attempting to refresh.")
     try:
-        if creds and creds.expired and creds.refresh_token:
-            logger.debug("Attempting to refresh expired credentials.")
-            creds.refresh(Request())
-            logger.info("Token refreshed successfully.")
-        else:
-            logger.debug("No valid refresh token available; initiating new auth flow.")
-            raise RefreshError()
+        creds.refresh(Request())
     except RefreshError as e:
-        logger.warning(f"Refresh failed ({e}); starting browser-based reauthentication.")
-        flow = InstalledAppFlow.from_client_secrets_file(
-            CREDENTIALS_PATH, SCOPES
-        )
-        creds = flow.run_local_server(port=0)
-        logger.info("User successfully reauthenticated via browser flow.")
+        logger.warning(f"Initial refresh attempt failed: {e}")
+        return reauthenticate_and_save()
 
-    # Save updated credentials
-    with TOKEN_PATH.open("w") as token:
-        token.write(creds.to_json())
-        logger.debug(f"Credentials saved to {TOKEN_PATH}")
-
+    logger.info("Credentials refreshed successfully.")
+    save_credentials(creds)
     return creds
 
 def parse_event_datetime(event_time: dict) -> datetime | None:
@@ -124,7 +127,7 @@ def fetch_current_event_names() -> list[str]:
     logger.info('Fetched event names.')
     return current_events
 
-if __name__ == '__main__': # Not meant to be run directly but if it is...
+if __name__ == '__main__':
     logger.info('Running fetch.py directly; fetching and printing current event names.')
     print(fetch_current_event_names())
     logger.info('fetch.py finished running.')
