@@ -77,10 +77,10 @@ class Overlay(tk.Tk):
         self.config(bg=BACKGROUND_COLOR)
         self.set_geometry(INIT_MESSAGE)
 
-        self.label_text: tk.StringVar = tk.StringVar(value=INIT_MESSAGE)
+        self._label_text: tk.StringVar = tk.StringVar(value=INIT_MESSAGE)
         label: tk.Label = tk.Label(
             self,
-            textvariable=self.label_text,
+            textvariable=self._label_text,
             foreground=TEXT_COLOR,
             # font=FONT,
             bg=BACKGROUND_COLOR
@@ -89,7 +89,7 @@ class Overlay(tk.Tk):
 
         self.bind_everything()
 
-        self.init_run()
+        self.run()
     
     def set_geometry(self, message: str) -> None:
         self.geometry(
@@ -104,9 +104,9 @@ class Overlay(tk.Tk):
             if event.char == 'h':
                 self.toggle_hide()
             elif event.char == 'r':
-                self.reset_refresh_timer()
+                self.run()
             elif event.char == 'c':
-                self.set_geometry(str(self.label_text)) # TODO: fix bug.
+                self.set_geometry(str(self._label_text)) # TODO: fix bug.
         self.bind('<Key>', Keypress)
 
         self.x = 0
@@ -117,38 +117,36 @@ class Overlay(tk.Tk):
     
     def click(self, event) -> None:
         self.x = event.x
-        self.attributes('-alpha', self.idle_alpha-MOUSE_CLICK_ALPHA_CHANGE)
+        self.attributes('-alpha', self._idle_alpha-MOUSE_CLICK_ALPHA_CHANGE)
 
     def drag(self, event) -> None:
         x = event.x - self.x + self.winfo_x()
+        if x < 0:
+            x = 0
+        elif x > self.winfo_screenwidth() - self.winfo_width():
+            x = self.winfo_screenwidth() - self.winfo_width()
         y = self.winfo_y()
         self.geometry(f'+{x}+{y}')
-        self.attributes('-alpha', self.idle_alpha-MOUSE_HOVER_ALPHA_CHANGE)
+        self.attributes('-alpha', self._idle_alpha-MOUSE_CLICK_ALPHA_CHANGE)
 
     def mouse_leave(self, event) -> None:
-        self.attributes('-alpha', self.idle_alpha)
+        self.attributes('-alpha', self._idle_alpha)
     
     def hover(self, event) -> None:
-        self.attributes('-alpha', self.idle_alpha-MOUSE_HOVER_ALPHA_CHANGE)
+        self.attributes('-alpha', self._idle_alpha-MOUSE_HOVER_ALPHA_CHANGE)
     
     def change_label_text_to(self, new_text: str) -> None:
         self.set_geometry(new_text)
-        self.label_text.set(value=new_text)
+        self._label_text.set(value=new_text)
     
     def change_idle_alpha_to(self, new_idle_alpha: float) -> None:
-        self.idle_alpha = new_idle_alpha
+        self._idle_alpha = new_idle_alpha
         self.attributes('-alpha', new_idle_alpha)
-    
-    def reset_refresh_timer(self) -> None:
-        if hasattr(self, 'after_id'):
-            self.after_cancel(self.after_id)
-        self.update_label_with_events_once()
-        self.after_id = self.after(FETCH_INTERVAL_MILLISECONDS, self.run)
     
     def update_label_with_events_once(self) -> None:
         self.change_label_text_to(REFRESHING_MESSAGE)
 
-        event_names = fetch_current_event_names()
+        event_names: list[str] = fetch_current_event_names()
         if event_names:
             if any(STOPWATCH_SUBSTRING in name for name in event_names):
                 run_stopwatch()
@@ -157,19 +155,16 @@ class Overlay(tk.Tk):
         else:
             self.change_label_text_to(NO_CURRENT_EVENT_MESSAGE)
             self.change_idle_alpha_to(NO_CURRENT_EVENT_ALPHA)
-    
-    def init_run(self) -> None:
-        self.update_label_with_events_once()
-        minutes_till_next_interval: int = FETCH_INTERVAL_MINUTES - int(datetime.now().minute) % FETCH_INTERVAL_MINUTES
-        logger.info(f'Label updated with current events. Setting next update in {minutes_till_next_interval} minutes.')
-        self.after_id = self.after(minutes_till_next_interval * MINUTE_IN_MILLISECONDS, self.run)
 
     def run(self) -> None:
+        if hasattr(self, 'after_id'):
+            self.after_cancel(self.after_id)
         self.update_label_with_events_once()
-        self.after_id = self.after(FETCH_INTERVAL_MILLISECONDS, self.run)
-    
+        minutes_till_next_interval: int = FETCH_INTERVAL_MINUTES - int(datetime.now().minute) % FETCH_INTERVAL_MINUTES
+        self.after_id = self.after(minutes_till_next_interval * MINUTE_IN_MILLISECONDS, self.run)
+
     def toggle_hide(self) -> None:
-        if self.idle_alpha == DEFAULT_ALPHA:
+        if self._idle_alpha == DEFAULT_ALPHA:
             self.change_idle_alpha_to(HIDING_ALPHA)
         else:
             self.change_idle_alpha_to(DEFAULT_ALPHA)
