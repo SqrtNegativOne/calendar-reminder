@@ -48,7 +48,7 @@ NO_CURRENT_EVENT_ALPHA:   float =       0.2
 DEFAULT_ALPHA:            float =       0.7
 HIDING_ALPHA:             float =       0.2
 MOUSE_HOVER_ALPHA_CHANGE: float =       0.1
-MOUSE_CLICK_ALPHA_CHANGE: float =       0.2
+MOUSE_CLICK_ALPHA_CHANGE: float =       0.18
 
 INIT_MESSAGE: str = '~initialized~' # Only shown for a couple of milliseconds probably.
 NO_CURRENT_EVENT_MESSAGE: str = '~no current event~'
