@@ -2,6 +2,8 @@ import tkinter as tk
 from datetime import datetime
 import subprocess
 from loguru import logger
+import concurrent.futures
+import time
 
 from ctypes import windll
 windll.shcore.SetProcessDpiAwareness(1)
@@ -10,9 +12,9 @@ from fetch import fetch_current_event_names
 from config import (
     SCREEN_GEOMETRY, BACKGROUND_COLOR, TEXT_COLOR,
     DEFAULT_ALPHA, HIDING_ALPHA, NO_CURRENT_EVENT_ALPHA, MOUSE_HOVER_ALPHA_CHANGE, MOUSE_CLICK_ALPHA_CHANGE,
-    NO_CURRENT_EVENT_MESSAGE, INIT_MESSAGE, REFRESHING_MESSAGE,
+    NO_CURRENT_EVENT_MESSAGE, INIT_MESSAGE, REFRESHING_MESSAGE, TIMEOUT_MESSAGE,
     MAX_CHAR_WIDTH_PIXEL_COUNT, WINDOW_HEIGHT, MIN_WINDOW_WIDTH, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS,
-    FETCH_INTERVAL_MINUTES,
+    FETCH_INTERVAL_MINUTES, FETCH_TIMEOUT_SECONDS,
     LOG_FILE_PATH
 )
 
@@ -75,7 +77,7 @@ class Overlay(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", lambda: logger.info('Overlay kill attempted.')) # Disables Alt-F4
 
         self.config(bg=BACKGROUND_COLOR)
-        self.set_geometry(INIT_MESSAGE)
+        self._set_geometry(INIT_MESSAGE)
 
         self._label_text: tk.StringVar = tk.StringVar(value=INIT_MESSAGE)
         label: tk.Label = tk.Label(
@@ -91,7 +93,7 @@ class Overlay(tk.Tk):
 
         self.run()
     
-    def set_geometry(self, message: str) -> None:
+    def _set_geometry(self, message: str) -> None:
         self.geometry(
             get_window_geometry(
                 window_width  = max(MAX_CHAR_WIDTH_PIXEL_COUNT * len(message), MIN_WINDOW_WIDTH),
@@ -105,8 +107,6 @@ class Overlay(tk.Tk):
                 self.toggle_hide()
             elif event.char == 'r':
                 self.run()
-            elif event.char == 'c':
-                self.set_geometry(str(self._label_text)) # TODO: fix bug.
         self.bind('<Key>', Keypress)
 
         self.x = 0
@@ -136,17 +136,23 @@ class Overlay(tk.Tk):
         self.attributes('-alpha', self._idle_alpha-MOUSE_HOVER_ALPHA_CHANGE)
     
     def change_label_text_to(self, new_text: str) -> None:
-        self.set_geometry(new_text)
+        self._set_geometry(new_text)
         self._label_text.set(value=new_text)
     
     def change_idle_alpha_to(self, new_idle_alpha: float) -> None:
         self._idle_alpha = new_idle_alpha
         self.attributes('-alpha', new_idle_alpha)
-    
+
     def update_label_with_events_once(self) -> None:
         self.change_label_text_to(REFRESHING_MESSAGE)
 
-        event_names: list[str] = fetch_current_event_names()
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(fetch_current_event_names)
+            try:
+                event_names: list[str] = future.result(timeout=FETCH_TIMEOUT_SECONDS)
+            except concurrent.futures.TimeoutError:
+                event_names = [TIMEOUT_MESSAGE]
+
         if event_names:
             if any(STOPWATCH_SUBSTRING in name for name in event_names):
                 run_stopwatch()

@@ -24,6 +24,8 @@ MAX_RESULTS_TO_FETCH_PER_CALENDAR: int = 5
 # Update the overlay every .. minutes.
 FETCH_INTERVAL_MINUTES: int = 15
 
+FETCH_TIMEOUT_SECONDS: int = 5 # Seconds to wait before considering the fetch operation as timed out.
+
 GOOGLE_CAL_API_DELAY_SECONDS: int = 60 # Seconds it takes to fetch results from Google calendar, on average.
 
 # -------------------------------------------------
@@ -53,6 +55,7 @@ MOUSE_CLICK_ALPHA_CHANGE: float =       0.18
 INIT_MESSAGE: str = '~initialized~' # Only shown for a couple of milliseconds probably.
 NO_CURRENT_EVENT_MESSAGE: str = '~no current event~'
 REFRESHING_MESSAGE: str = '~refreshing~'
+TIMEOUT_MESSAGE: str = '~fetch timed out~'
 
 
 if __name__ == '__main__':
