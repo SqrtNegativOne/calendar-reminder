@@ -91,7 +91,7 @@ class Overlay(tk.Tk):
         )
         label.pack()
 
-        self.bind_everything()
+        self._bind_everything()
 
         self.run()
     
@@ -103,7 +103,7 @@ class Overlay(tk.Tk):
             )
         )
     
-    def bind_everything(self) -> None:
+    def _bind_everything(self) -> None:
         def Keypress(event):
             if event.char == 'h':
                 self.toggle_hide()
@@ -163,9 +163,9 @@ class Overlay(tk.Tk):
                 event_names = [TIMEOUT_MESSAGE]
 
         if not event_names:
+            logger.info('No current events found after fetch.')
             self.change_label_text_to(NO_CURRENT_EVENT_MESSAGE)
             self.change_idle_alpha_to(NO_CURRENT_EVENT_ALPHA)
-            logger.info('No current events found after fetch.')
             return
 
         if any(STOPWATCH_SUBSTRING in name for name in event_names):

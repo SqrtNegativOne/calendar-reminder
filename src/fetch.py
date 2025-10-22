@@ -6,7 +6,6 @@ from config import (
     LOG_FILE_PATH
 )
 
-
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 
 from loguru import logger
