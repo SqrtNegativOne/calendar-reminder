@@ -71,9 +71,10 @@ def get_window_geometry(window_width: int, window_height: int) -> str:
 
 class Overlay(tk.Tk):
     def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
         logger.info('Overlay window initialised.')
 
-        tk.Tk.__init__(self, *args, **kwargs)
         self.overrideredirect(True) # Rips out the titlebar
         self.attributes('-topmost', True)
         self.protocol("WM_DELETE_WINDOW", lambda: logger.info('Overlay kill attempted.')) # Disables Alt-F4
@@ -141,11 +142,11 @@ class Overlay(tk.Tk):
     
     def hover(self, event) -> None:
         self.attributes('-alpha', self._idle_alpha-MOUSE_HOVER_ALPHA_CHANGE)
-    
+
     def change_label_text_to(self, new_text: str) -> None:
         self._set_geometry(new_text)
         self._label_text.set(value=new_text)
-    
+
     def change_idle_alpha_to(self, new_idle_alpha: float) -> None:
         self._idle_alpha = new_idle_alpha
         self.attributes('-alpha', new_idle_alpha)

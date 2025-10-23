@@ -1,8 +1,8 @@
 # -------------------------------------------------
 # FILES
 # -------------------------------------------------
-
 from pathlib import Path
+
 BASE_PATH = Path(__file__).parent
 SECRETS_PATH = BASE_PATH.parent / 'secrets'
 
@@ -14,8 +14,8 @@ LOG_FILE_PATH = BASE_PATH / 'out.log'
 # -------------------------------------------------
 # FETCH CONFIGURATION
 # -------------------------------------------------
-
 from datetime import timedelta
+
 # Assumes all tasks in your calendar are ≤ 2 hours long, and searches in MAX_TASK_LENGTH * 2 interval only.
 MAX_TASK_LENGTH: timedelta = timedelta(hours=2)
 # Maximum calendar items to fetch within the MAX_TASK_LENGTH duration.

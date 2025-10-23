@@ -1,9 +1,12 @@
+import concurrent
+import concurrent.futures
 from datetime import datetime, timezone
 
 from config import (
     MAX_TASK_LENGTH, MAX_RESULTS_TO_FETCH_PER_CALENDAR,
     CREDS_PATH, CREDENTIALS_PATH,
-    LOG_FILE_PATH
+    LOG_FILE_PATH,
+    FETCH_TIMEOUT_SECONDS,
 )
 
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
@@ -39,6 +42,9 @@ def reauthenticate_and_save():
     save_credentials(creds)
     return creds
 
+def attempt_credentials_refresh(creds):
+    creds.refresh(Request())
+
 def get_credentials():
     """Obtain valid Google API credentials, refreshing or reauthenticating as needed."""
     logger.info("Starting credential retrieval process.")
@@ -59,13 +65,18 @@ def get_credentials():
         return reauthenticate_and_save()
     
     logger.debug("Credentials are expired and have a refresh token; attempting to refresh.")
-    try:
-        creds.refresh(Request())
-    except RefreshError as e:
-        logger.warning(f"Initial refresh attempt failed: {e}")
-        return reauthenticate_and_save()
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future = executor.submit(attempt_credentials_refresh, creds)
+        try:
+            _ = future.result(timeout=FETCH_TIMEOUT_SECONDS)
+        except concurrent.futures.TimeoutError:
+            logger.warning('Fetch operation timed out during credential refresh. Reauthenticating.')
+            return reauthenticate_and_save()
+        except RefreshError as e:
+            logger.warning(f"Initial refresh attempt failed: {e}. Reauthenticating.")
+            return reauthenticate_and_save()
+    attempt_credentials_refresh(creds)
 
-    logger.info("Credentials refreshed successfully.")
     save_credentials(creds)
     return creds
 
