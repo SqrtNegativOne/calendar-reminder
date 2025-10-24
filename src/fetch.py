@@ -57,7 +57,7 @@ def get_credentials():
     creds = Credentials.from_authorized_user_file(CREDS_PATH, SCOPES)
 
     if creds.valid:
-        logger.info("Existing credentials are valid.")
+        logger.info("Existing credentials are valid. Returning them.")
         return creds
 
     if not creds.refresh_token or not creds.expired:
@@ -126,8 +126,10 @@ def fetch_current_event_names_from_calendar(service, calendar_id) -> list[str]:
     return current_event_names
 
 def fetch_current_event_names() -> list[str]:
-    logger.info('Fetching current event names...')
-    service = build('calendar', 'v3', credentials=get_credentials())
+    logger.info('Fetching current event names, by first fetching credentials...')
+    creds = get_credentials()
+    logger.info('Credentials obtained. Building calendar service...')
+    service = build('calendar', 'v3', credentials=creds)
     calendar_list = service.calendarList().list().execute()
     calendar_ids = [calendar['id'] for calendar in calendar_list.get('items', [])]
 

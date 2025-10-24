@@ -11,21 +11,22 @@ from ctypes import windll
 windll.shcore.SetProcessDpiAwareness(1)
 
 from fetch import fetch_current_event_names
+
 from config import (
     SCREEN_GEOMETRY, BACKGROUND_COLOR, TEXT_COLOR,
-    DEFAULT_ALPHA, HIDING_ALPHA, NO_CURRENT_EVENT_ALPHA, MOUSE_HOVER_ALPHA_CHANGE, MOUSE_CLICK_ALPHA_CHANGE,
-    NO_CURRENT_EVENT_MESSAGE, INIT_MESSAGE, REFRESHING_MESSAGE, TIMEOUT_MESSAGE,
+    DEFAULT_ALPHA, HIDING_ALPHA, NON_EVENT_ALPHA, MOUSE_HOVER_ALPHA_CHANGE, MOUSE_CLICK_ALPHA_CHANGE,
+    NO_CURRENT_EVENT_MESSAGE, REFRESHING_MESSAGE, TIMEOUT_RETRY_MESSAGE, FREQUENT_TIMEOUT_MESSAGE,
     MAX_CHAR_WIDTH_PIXEL_COUNT, WINDOW_HEIGHT, MIN_WINDOW_WIDTH, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS,
     FETCH_INTERVAL_MINUTES, FETCH_TIMEOUT_SECONDS,
     LOG_FILE_PATH
 )
 
-logger.add(LOG_FILE_PATH)
+#logger.add(LOG_FILE_PATH)
 
 MINUTE_IN_MILLISECONDS: int = 60 * 1000
 FETCH_INTERVAL_MILLISECONDS: int = FETCH_INTERVAL_MINUTES * MINUTE_IN_MILLISECONDS
 
-STOPWATCH_SUBSTRING = 'S;'
+STOPWATCH_SUBSTRING = ';S;'
 STOPWATCH_PATH = r"C:\Users\arkma\Documents\GitHub\StopwatchTK\main.pyw"
 
 def run_stopwatch() -> None:
@@ -73,16 +74,16 @@ class Overlay(tk.Tk):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        logger.info('Overlay window initialised.')
+        logger.info('Setting up overlay window...')
 
         self.overrideredirect(True) # Rips out the titlebar
         self.attributes('-topmost', True)
         self.protocol("WM_DELETE_WINDOW", lambda: logger.info('Overlay kill attempted.')) # Disables Alt-F4
 
         self.config(bg=BACKGROUND_COLOR)
-        self._set_geometry(INIT_MESSAGE)
-
-        self._label_text: tk.StringVar = tk.StringVar(value=INIT_MESSAGE)
+        
+        self._set_geometry(REFRESHING_MESSAGE)
+        self._label_text: tk.StringVar = tk.StringVar(value=REFRESHING_MESSAGE)
         label: tk.Label = tk.Label(
             self,
             textvariable=self._label_text,
@@ -91,6 +92,8 @@ class Overlay(tk.Tk):
             bg=BACKGROUND_COLOR
         )
         label.pack()
+
+        self.timeout_happened_before: bool = False
 
         self._bind_everything()
 
@@ -106,9 +109,11 @@ class Overlay(tk.Tk):
     
     def _bind_everything(self) -> None:
         def Keypress(event):
-            if event.char == 'h':
+            c = event.char
+            logger.info(f'Key pressed: {c}')
+            if c == 'h':
                 self.toggle_hide()
-            elif event.char == 'r':
+            elif c == 'r':
                 self.run()
         self.bind('<Key>', Keypress)
 
@@ -134,8 +139,7 @@ class Overlay(tk.Tk):
             x = self.winfo_screenwidth() - self.winfo_width()
         y = self.winfo_y()
         self.geometry(f'+{x}+{y}')
-        #self.attributes('-alpha', self._idle_alpha-MOUSE_HOVER_ALPHA_CHANGE) # We technically don't click when dragging.
-        self.attributes('-alpha', self._idle_alpha-MOUSE_CLICK_ALPHA_CHANGE) # or do we? idk
+        self.attributes('-alpha', self._idle_alpha-MOUSE_CLICK_ALPHA_CHANGE) # We are clicking when we are dragging.
 
     def mouse_leave(self, event) -> None:
         self.attributes('-alpha', self._idle_alpha)
@@ -146,34 +150,39 @@ class Overlay(tk.Tk):
     def change_label_text_to(self, new_text: str) -> None:
         self._set_geometry(new_text)
         self._label_text.set(value=new_text)
+        logger.info(f'Label text changed to: {new_text}')
 
     def change_idle_alpha_to(self, new_idle_alpha: float) -> None:
         self._idle_alpha = new_idle_alpha
         self.attributes('-alpha', new_idle_alpha)
 
     def update_label_with_events_once(self) -> None:
+        # Try not to have logging here, have it only in the functions called from here.
         self.change_label_text_to(REFRESHING_MESSAGE)
-        logger.info('Set label to REFRESHING_MESSAGE.')
+        self.change_idle_alpha_to(NON_EVENT_ALPHA)
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(fetch_current_event_names)
             try:
                 event_names: list[str] = future.result(timeout=FETCH_TIMEOUT_SECONDS)
             except concurrent.futures.TimeoutError:
-                logger.warning('Fetch current event names timed out.')
-                event_names = [TIMEOUT_MESSAGE]
+                if self.timeout_happened_before:
+                    self.change_label_text_to(FREQUENT_TIMEOUT_MESSAGE)
+                    return
+                self.timeout_happened_before = True
+                self.change_label_text_to(TIMEOUT_RETRY_MESSAGE)
+                return
 
         if not event_names:
-            logger.info('No current events found after fetch.')
             self.change_label_text_to(NO_CURRENT_EVENT_MESSAGE)
-            self.change_idle_alpha_to(NO_CURRENT_EVENT_ALPHA)
             return
 
-        if any(STOPWATCH_SUBSTRING in name for name in event_names):
-            run_stopwatch()
+        for i, name in enumerate(event_names):
+            if STOPWATCH_SUBSTRING in name:
+                event_names[i] = name.replace(STOPWATCH_SUBSTRING, '').strip()
+                run_stopwatch()
         self.change_label_text_to(' ⋅ '.join(event_names))
         self.change_idle_alpha_to(DEFAULT_ALPHA)
-        logger.info(f'Updated label with events: {event_names}')
 
     def run(self) -> None:
         if hasattr(self, 'after_id'):

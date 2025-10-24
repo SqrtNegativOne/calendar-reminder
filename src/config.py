@@ -24,9 +24,7 @@ MAX_RESULTS_TO_FETCH_PER_CALENDAR: int = 5
 # Update the overlay every .. minutes.
 FETCH_INTERVAL_MINUTES: int = 15
 
-FETCH_TIMEOUT_SECONDS: int = 5 # Seconds to wait before considering the fetch operation as timed out.
-
-GOOGLE_CAL_API_DELAY_SECONDS: int = 60 # Seconds it takes to fetch results from Google calendar, on average.
+FETCH_TIMEOUT_SECONDS: int = 8 # Seconds to wait before considering the fetch operation as timed out.
 
 # -------------------------------------------------
 # REMINDER APP CONFIGURATION
@@ -46,16 +44,18 @@ WINDOW_HEIGHT: int = 28
 BACKGROUND_COLOR: str =   '#181818'
 TEXT_COLOR:       str =   "#FFFFFF"
 
-NO_CURRENT_EVENT_ALPHA:   float =       0.2
-DEFAULT_ALPHA:            float =       0.7
-HIDING_ALPHA:             float =       0.2
-MOUSE_HOVER_ALPHA_CHANGE: float =       0.1
+NON_EVENT_ALPHA:          float =       0.20 # When refreshing, or no current event.
+DEFAULT_ALPHA:            float =       0.70
+HIDING_ALPHA:             float =       0.20
+MOUSE_HOVER_ALPHA_CHANGE: float =       0.10
 MOUSE_CLICK_ALPHA_CHANGE: float =       0.15
 
-INIT_MESSAGE: str = '~initialized~' # Only shown for a couple of milliseconds probably.
-NO_CURRENT_EVENT_MESSAGE: str = '~no current event~'
-REFRESHING_MESSAGE: str = '~refreshing~'
-TIMEOUT_MESSAGE: str = '~fetch timed out~'
+assert 0.05 <= MOUSE_HOVER_ALPHA_CHANGE < MOUSE_CLICK_ALPHA_CHANGE < HIDING_ALPHA <= NON_EVENT_ALPHA < DEFAULT_ALPHA < 1.0
+
+NO_CURRENT_EVENT_MESSAGE: str = '[no current event]'
+REFRESHING_MESSAGE: str = '[refreshing]'
+TIMEOUT_RETRY_MESSAGE: str = '[fetch timed out. retrying]'
+FREQUENT_TIMEOUT_MESSAGE: str = '[frequent timeouts detected. check wifi and logs]'
 
 
 if __name__ == '__main__':
