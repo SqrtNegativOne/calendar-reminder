@@ -12,11 +12,11 @@ CREDENTIALS_PATH = SECRETS_PATH / 'credentials.json'
 LOG_FILE_PATH = BASE_PATH / 'out.log'
 
 # -------------------------------------------------
-# FETCH CONFIGURATION
+# CALENDAR FETCH CONFIGURATION
 # -------------------------------------------------
 from datetime import timedelta
 
-# Assumes all tasks in your calendar are ≤ 2 hours long, and searches in MAX_TASK_LENGTH * 2 interval only.
+# Assumes all tasks in your calendar are mostly ≤ 2 hours long, and searches in MAX_TASK_LENGTH * 2 interval only.
 MAX_TASK_LENGTH: timedelta = timedelta(hours=2)
 # Maximum calendar items to fetch within the MAX_TASK_LENGTH duration.
 MAX_RESULTS_TO_FETCH_PER_CALENDAR: int = 5
@@ -27,7 +27,7 @@ FETCH_INTERVAL_MINUTES: int = 15
 FETCH_TIMEOUT_SECONDS: int = 8 # Seconds to wait before considering the fetch operation as timed out.
 
 # -------------------------------------------------
-# REMINDER APP CONFIGURATION
+# REMINDER APP / GUI CONFIGURATION
 # -------------------------------------------------
 
 # Size of your screen; (width, height) in pixels.
@@ -39,7 +39,7 @@ WINDOWS_TASKBAR_HEIGHT_IN_PIXELS = 52 # for my custom windows taskbar. default i
 
 MAX_CHAR_WIDTH_PIXEL_COUNT: int = 8 # Maximum width of a character in the font used, in pixels. Used to calculate window width.
 MIN_WINDOW_WIDTH: int = 50 # Window width won't go lower than this.
-WINDOW_HEIGHT: int = 28
+WINDOW_HEIGHT: int = 26
 
 BACKGROUND_COLOR: str =   '#181818'
 TEXT_COLOR:       str =   "#FFFFFF"
