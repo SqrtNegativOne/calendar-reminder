@@ -114,11 +114,11 @@ class Overlay(tk.Tk):
     
     def _bind_everything(self) -> None:
         def Keypress(event):
-            c = event.char
-            logger.info(f'Key pressed: {c}')
-            if c == 'h':
+            key = event.char
+            logger.info(f'Key pressed: {key}')
+            if key == 'h':
                 self.toggle_hide()
-            elif c == 'r':
+            elif key == 'r':
                 self.run()
         self.bind('<Key>', Keypress)
 
@@ -165,7 +165,7 @@ class Overlay(tk.Tk):
         # Try not to have logging here, have it only in the functions called from here.
         self.change_label_text_to(REFRESHING_MESSAGE)
         # self.change_idle_alpha_to(NON_EVENT_ALPHA)
-        # Don't change alpha while refreshing; it may be hidden. Also distracting to change it.
+        # Don't change alpha while refreshing; it may be hidden + distracting to change it when it isn't.
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(fetch_current_event_names)
@@ -198,7 +198,7 @@ class Overlay(tk.Tk):
         self.update_label_with_events_once()
         now = datetime.now()
         seconds_till_next_interval: int = \
-            (FETCH_INTERVAL_MINUTES - int(now.minute) % FETCH_INTERVAL_MINUTES) * 60 - now.second
+            (FETCH_INTERVAL_MINUTES - int(now.minute) % FETCH_INTERVAL_MINUTES) * 60 - now.second - FETCH_TIMEOUT_SECONDS
         logger.info(f'Next update in {seconds_till_next_interval} second(s).')
         self.after_id = self.after(seconds_till_next_interval * SECOND_IN_MILLISECONDS, self.run)
 
