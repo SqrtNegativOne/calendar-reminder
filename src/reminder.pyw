@@ -164,7 +164,8 @@ class Overlay(tk.Tk):
     def update_label_with_events_once(self) -> None:
         # Try not to have logging here, have it only in the functions called from here.
         self.change_label_text_to(REFRESHING_MESSAGE)
-        self.change_idle_alpha_to(NON_EVENT_ALPHA)
+        # self.change_idle_alpha_to(NON_EVENT_ALPHA)
+        # Don't change alpha while refreshing; it may be hidden. Also distracting to change it.
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(fetch_current_event_names)
