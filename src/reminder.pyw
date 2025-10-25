@@ -174,6 +174,7 @@ class Overlay(tk.Tk):
             except concurrent.futures.TimeoutError:
                 if self.timeout_happened_before:
                     self.change_label_text_to(FREQUENT_TIMEOUT_MESSAGE)
+                    self.change_idle_alpha_to(NON_EVENT_ALPHA)
                     return
                 self.timeout_happened_before = True
                 self.change_label_text_to(TIMEOUT_RETRY_MESSAGE)
@@ -181,6 +182,7 @@ class Overlay(tk.Tk):
 
         if not event_names:
             self.change_label_text_to(NO_CURRENT_EVENT_MESSAGE)
+            self.change_idle_alpha_to(NON_EVENT_ALPHA)
             return
 
         for i, name in enumerate(event_names):
@@ -199,7 +201,7 @@ class Overlay(tk.Tk):
         now = datetime.now()
         seconds_till_next_interval: int = \
             (FETCH_INTERVAL_MINUTES - int(now.minute) % FETCH_INTERVAL_MINUTES) * 60 - now.second - FETCH_TIMEOUT_SECONDS
-        logger.info(f'Next update in {seconds_till_next_interval} second(s).')
+        logger.info(f'Next update in {seconds_till_next_interval} second(s) (at least {seconds_till_next_interval // 60} minute(s)).')
         self.after_id = self.after(seconds_till_next_interval * SECOND_IN_MILLISECONDS, self.run)
 
     def toggle_hide(self) -> None:
