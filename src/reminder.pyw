@@ -22,8 +22,8 @@ from config import (
     APPS, APP_CODE_PREFIX
 )
 
-MINUTE_IN_MILLISECONDS: int = 60 * 1000
-FETCH_INTERVAL_MILLISECONDS: int = FETCH_INTERVAL_MINUTES * MINUTE_IN_MILLISECONDS
+SECOND_IN_MILLISECONDS: int = 1000
+FETCH_INTERVAL_MILLISECONDS: int = FETCH_INTERVAL_MINUTES * SECOND_IN_MILLISECONDS * 60
 
 
 def run_app(app_path: str | Callable) -> None:
@@ -83,7 +83,7 @@ class Overlay(tk.Tk):
 
         self.overrideredirect(True) # Rips out the titlebar
         self.attributes('-topmost', True)
-        self.protocol("WM_DELETE_WINDOW", lambda: logger.info('Overlay kill attempted.')) # Disables Alt-F4
+        self.protocol("WM_DELETE_WINDOW", lambda: logger.info('Overlay kill attempted.'))
 
         self.config(bg=BACKGROUND_COLOR)
         
@@ -195,9 +195,11 @@ class Overlay(tk.Tk):
         if hasattr(self, 'after_id'):
             self.after_cancel(self.after_id)
         self.update_label_with_events_once()
-        minutes_till_next_interval: int = FETCH_INTERVAL_MINUTES - int(datetime.now().minute) % FETCH_INTERVAL_MINUTES
-        logger.info(f'Next update in {minutes_till_next_interval} minute(s).')
-        self.after_id = self.after(minutes_till_next_interval * MINUTE_IN_MILLISECONDS, self.run)
+        now = datetime.now()
+        seconds_till_next_interval: int = \
+            (FETCH_INTERVAL_MINUTES - int(now.minute) % FETCH_INTERVAL_MINUTES) * 60 - now.second
+        logger.info(f'Next update in {seconds_till_next_interval} second(s).')
+        self.after_id = self.after(seconds_till_next_interval * SECOND_IN_MILLISECONDS, self.run)
 
     def toggle_hide(self) -> None:
         if self._idle_alpha == DEFAULT_ALPHA:
