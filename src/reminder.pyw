@@ -1,7 +1,8 @@
 import tkinter as tk
 from datetime import datetime
+from typing import Callable
 import subprocess
-from loguru import logger
+from loguru import logger # same as the logger in fetch.py, so logs go to the same file
 import concurrent.futures
 from os import system, getenv
 from dotenv import load_dotenv
@@ -18,23 +19,26 @@ from config import (
     NO_CURRENT_EVENT_MESSAGE, REFRESHING_MESSAGE, TIMEOUT_RETRY_MESSAGE, FREQUENT_TIMEOUT_MESSAGE,
     MAX_CHAR_WIDTH_PIXEL_COUNT, WINDOW_HEIGHT, MIN_WINDOW_WIDTH, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS,
     FETCH_INTERVAL_MINUTES, FETCH_TIMEOUT_SECONDS,
-    LOG_FILE_PATH
+    APPS, APP_CODE_PREFIX
 )
-
-#logger.add(LOG_FILE_PATH)
 
 MINUTE_IN_MILLISECONDS: int = 60 * 1000
 FETCH_INTERVAL_MILLISECONDS: int = FETCH_INTERVAL_MINUTES * MINUTE_IN_MILLISECONDS
 
-STOPWATCH_SUBSTRING = ';S;'
-STOPWATCH_PATH = r"C:\Users\arkma\Documents\GitHub\StopwatchTK\main.pyw"
 
-def run_stopwatch() -> None:
+def run_app(app_path: str | Callable) -> None:
+    """Launches an application given its file path."""
     try:
-        subprocess.Popen(['python', STOPWATCH_PATH], creationflags=subprocess.CREATE_NEW_CONSOLE)
-        logger.info('Stopwatch launched.')
+        if callable(app_path):
+            app_path()
+        elif app_path.lower().endswith('.exe'):
+            subprocess.Popen([app_path], shell=True)
+        elif app_path.lower().endswith('.pyw'):
+            subprocess.Popen(['pythonw', app_path], shell=True)
+        else:
+            logger.error(f'Unsupported application type for path: {app_path}')
     except Exception as e:
-        logger.error(f'Failed to launch stopwatch: {e}')
+        logger.error(f'Failed to launch application at {app_path}: {e}')
 
 def get_current_screen_width_height() -> tuple[int, int]:
     """
@@ -69,6 +73,7 @@ def get_window_geometry(window_width: int, window_height: int) -> str:
     window_top = screen_height - WINDOWS_TASKBAR_HEIGHT_IN_PIXELS - window_height
 
     return f'{window_width}x{window_height}+{window_left}+{window_top}'
+
 
 class Overlay(tk.Tk):
     def __init__(self, *args, **kwargs) -> None:
@@ -148,8 +153,8 @@ class Overlay(tk.Tk):
         self.attributes('-alpha', self._idle_alpha-MOUSE_HOVER_ALPHA_CHANGE)
 
     def change_label_text_to(self, new_text: str) -> None:
-        self._set_geometry(new_text)
         self._label_text.set(value=new_text)
+        self._set_geometry(new_text)
         logger.info(f'Label text changed to: {new_text}')
 
     def change_idle_alpha_to(self, new_idle_alpha: float) -> None:
@@ -178,9 +183,11 @@ class Overlay(tk.Tk):
             return
 
         for i, name in enumerate(event_names):
-            if STOPWATCH_SUBSTRING in name:
-                event_names[i] = name.replace(STOPWATCH_SUBSTRING, '').strip()
-                run_stopwatch()
+            for app_code in APPS.keys():
+                substring = APP_CODE_PREFIX + app_code
+                if substring in name:
+                    event_names[i] = name.replace(substring, '').strip()
+                    run_app(APPS[app_code])
         self.change_label_text_to(' ⋅ '.join(event_names))
         self.change_idle_alpha_to(DEFAULT_ALPHA)
 

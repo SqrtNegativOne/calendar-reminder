@@ -37,7 +37,7 @@ FETCH_TIMEOUT_SECONDS: int = 8 # Seconds to wait before considering the fetch op
 SCREEN_GEOMETRY: tuple[int, int] | None = (1920, 1200)
 WINDOWS_TASKBAR_HEIGHT_IN_PIXELS = 52 # for my custom windows taskbar. default is 60
 
-MAX_CHAR_WIDTH_PIXEL_COUNT: int = 10 # Maximum width of a character in the font used, in pixels. Used to calculate window width.
+MAX_CHAR_WIDTH_PIXEL_COUNT: int = 8 # Maximum width of a character in the font used, in pixels. Used to calculate window width.
 MIN_WINDOW_WIDTH: int = 50 # Window width won't go lower than this.
 WINDOW_HEIGHT: int = 28
 
@@ -56,6 +56,33 @@ NO_CURRENT_EVENT_MESSAGE: str = '[no current event]'
 REFRESHING_MESSAGE: str = '[refreshing]'
 TIMEOUT_RETRY_MESSAGE: str = '[fetch timed out. retrying]'
 FREQUENT_TIMEOUT_MESSAGE: str = '[frequent timeouts detected. check wifi and logs]'
+
+# -------------------------------------------------
+# REMINDER APP / EXTERNAL APPS CONFIGURATION
+# -------------------------------------------------
+from typing import Callable
+
+def run_stopwatch():
+    import subprocess
+    import os
+
+    subprocess.Popen([
+        r"C:\Users\arkma\Documents\GitHub\StopwatchTK\.venv\Scripts\pythonw.exe",
+        r"C:\Users\arkma\Documents\GitHub\StopwatchTK\main.pyw"
+    ], creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP)
+
+
+# ;X is a special substring that indicates launching app X.
+# You can add more apps here, mapping the substring to the path of the app to launch.
+APP_CODE_PREFIX: str = ';'
+APPS: dict[str, str | Callable] = {
+    'A': r"C:\Users\arkma\AppData\Local\Programs\Anki\anki.exe",
+    # bcdefghijklmn
+    'O': r"C:\Users\arkma\AppData\Local\Programs\obsidian\Obsidian.exe",
+    # pqr
+    'S': run_stopwatch,
+    # tuvwxyz
+}
 
 
 if __name__ == '__main__':
