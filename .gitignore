@@ -15,3 +15,5 @@ secrets
 
 # Logging file. Loguru default settings can leak things in production.
 out.log
+
+notes.md

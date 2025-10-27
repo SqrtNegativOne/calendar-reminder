@@ -1,18 +1,18 @@
 # -------------------------------------------------
-# FILES
+# CALENDAR FETCHING / FILE CONFIGURATION
 # -------------------------------------------------
 from pathlib import Path
 
 BASE_PATH = Path(__file__).parent
 SECRETS_PATH = BASE_PATH.parent / 'secrets'
 
-CREDS_PATH = SECRETS_PATH / 'token.json'
-CREDENTIALS_PATH = SECRETS_PATH / 'credentials.json'
+USER_ACCESS_CREDENTIALS_PATH = SECRETS_PATH / 'token.json'
+CLIENT_SECRETS_PATH = SECRETS_PATH / 'credentials.json'
 
 LOG_FILE_PATH = BASE_PATH / 'out.log'
 
 # -------------------------------------------------
-# CALENDAR FETCH CONFIGURATION
+# CALENDAR FETCHING / TIME CONFIGURATION
 # -------------------------------------------------
 from datetime import timedelta
 
@@ -61,26 +61,15 @@ FREQUENT_TIMEOUT_MESSAGE: str = '[frequent timeouts detected. check wifi and log
 # REMINDER APP / EXTERNAL APPS CONFIGURATION
 # -------------------------------------------------
 from typing import Callable
+from app_config import py, exe
 
-def run_stopwatch():
-    import subprocess
-    import os
-
-    subprocess.Popen([
-        r"C:\Users\arkma\Documents\GitHub\StopwatchTK\.venv\Scripts\pythonw.exe",
-        r"C:\Users\arkma\Documents\GitHub\StopwatchTK\main.pyw"
-    ], creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP)
-
-
-# ;X is a special substring that indicates launching app X.
-# You can add more apps here, mapping the substring to the path of the app to launch.
 APP_CODE_PREFIX: str = ';'
-APPS: dict[str, str | Callable] = {
-    'A': r"C:\Users\arkma\AppData\Local\Programs\Anki\anki.exe",
+APPS: dict[str, Callable] = {
+    'A': exe(r"C:\Users\arkma\AppData\Local\Programs\Anki\anki.exe"),
     # bcdefghijklmn
-    'O': r"C:\Users\arkma\AppData\Local\Programs\obsidian\Obsidian.exe",
+    'O': exe(r"C:\Users\arkma\AppData\Local\Programs\obsidian\Obsidian.exe"),
     # pqr
-    'S': run_stopwatch,
+    'S': py(r"C:\Users\arkma\Documents\GitHub\StopwatchTK\main.pyw", interpreter=r"C:\Users\arkma\Documents\GitHub\StopwatchTK\.venv\Scripts\pythonw.exe"),
     # tuvwxyz
 }
 

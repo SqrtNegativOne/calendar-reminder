@@ -1,10 +1,9 @@
-import concurrent
 import concurrent.futures
 from datetime import datetime, timezone
 
 from config import (
     MAX_TASK_LENGTH, MAX_RESULTS_TO_FETCH_PER_CALENDAR,
-    CREDS_PATH, CREDENTIALS_PATH,
+    USER_ACCESS_CREDENTIALS_PATH, CLIENT_SECRETS_PATH,
     LOG_FILE_PATH,
     FETCH_TIMEOUT_SECONDS,
 )
@@ -20,27 +19,22 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.auth.exceptions import RefreshError
-from pathlib import Path
 
-BASE_DIR = Path(__file__).parent.parent
-SECRETS_DIR = BASE_DIR / "secrets"
-CREDS_PATH = SECRETS_DIR / "token.json"
-
-def save_credentials(creds):
-    with CREDS_PATH.open("w") as cred_file:
-        cred_file.write(creds.to_json())
-        logger.debug(f"Credentials saved to {CREDS_PATH}")
+def save_user_credentials(user_creds):
+    with USER_ACCESS_CREDENTIALS_PATH.open("w") as cred_file:
+        cred_file.write(user_creds.to_json())
+        logger.debug(f"Credentials saved to {USER_ACCESS_CREDENTIALS_PATH}")
 
 def reauthenticate_and_save():
     logger.info("Starting browser-based reauthentication flow.")
     flow = InstalledAppFlow.from_client_secrets_file(
-        CREDENTIALS_PATH, SCOPES
+        CLIENT_SECRETS_PATH, SCOPES
     )
-    creds = flow.run_local_server(port=0)
+    user_creds = flow.run_local_server(port=0)
     logger.info("User successfully reauthenticated via browser flow.")
 
-    save_credentials(creds)
-    return creds
+    save_user_credentials(user_creds)
+    return user_creds
 
 def attempt_credentials_refresh(creds):
     creds.refresh(Request())
@@ -49,24 +43,24 @@ def get_credentials():
     """Obtain valid Google API credentials, refreshing or reauthenticating as needed."""
     logger.info("Starting credential retrieval process.")
 
-    if not CREDS_PATH.exists():
-        logger.info(f"No credentials file found at {CREDS_PATH}.")
+    if not USER_ACCESS_CREDENTIALS_PATH.exists():
+        logger.info(f"Nothing found at {USER_ACCESS_CREDENTIALS_PATH}.")
         return reauthenticate_and_save()
 
-    logger.info(f"Loading credentials from {CREDS_PATH}")
-    creds = Credentials.from_authorized_user_file(CREDS_PATH, SCOPES)
+    logger.info(f"Loading credentials from {USER_ACCESS_CREDENTIALS_PATH}")
+    user_creds = Credentials.from_authorized_user_file(USER_ACCESS_CREDENTIALS_PATH, SCOPES)
 
-    if creds.valid:
+    if user_creds.valid:
         logger.info("Existing credentials are valid. Returning them.")
-        return creds
+        return user_creds
 
-    if not creds.refresh_token or not creds.expired:
+    if not user_creds.refresh_token or not user_creds.expired:
         logger.info("Invalid credentials and either lack a refresh token or are not expired.")
         return reauthenticate_and_save()
     
     logger.debug("Credentials are expired and have a refresh token; attempting to refresh.")
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        future = executor.submit(attempt_credentials_refresh, creds)
+        future = executor.submit(attempt_credentials_refresh, user_creds)
         try:
             _ = future.result(timeout=FETCH_TIMEOUT_SECONDS)
         except concurrent.futures.TimeoutError:
@@ -75,10 +69,10 @@ def get_credentials():
         except RefreshError as e:
             logger.warning(f"Initial refresh attempt failed: {e}. Reauthenticating.")
             return reauthenticate_and_save()
-    attempt_credentials_refresh(creds)
+    attempt_credentials_refresh(user_creds)
 
-    save_credentials(creds)
-    return creds
+    save_user_credentials(user_creds)
+    return user_creds
 
 def parse_event_datetime(event_time: dict) -> datetime | None:
     if "dateTime" in event_time:

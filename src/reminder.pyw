@@ -1,10 +1,7 @@
 import tkinter as tk
 from datetime import datetime
-from typing import Callable
-import subprocess
 from loguru import logger # same as the logger in fetch.py, so logs go to the same file
 import concurrent.futures
-from os import system, getenv
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -24,21 +21,6 @@ from config import (
 
 SECOND_IN_MILLISECONDS: int = 1000
 FETCH_INTERVAL_MILLISECONDS: int = FETCH_INTERVAL_MINUTES * SECOND_IN_MILLISECONDS * 60
-
-
-def run_app(app_path: str | Callable) -> None:
-    """Launches an application given its file path."""
-    try:
-        if callable(app_path):
-            app_path()
-        elif app_path.lower().endswith('.exe'):
-            subprocess.Popen([app_path], shell=True)
-        elif app_path.lower().endswith('.pyw'):
-            subprocess.Popen(['pythonw', app_path], shell=True)
-        else:
-            logger.error(f'Unsupported application type for path: {app_path}')
-    except Exception as e:
-        logger.error(f'Failed to launch application at {app_path}: {e}')
 
 def get_current_screen_width_height() -> tuple[int, int]:
     """
@@ -160,10 +142,22 @@ class Overlay(tk.Tk):
     def change_idle_alpha_to(self, new_idle_alpha: float) -> None:
         self._idle_alpha = new_idle_alpha
         self.attributes('-alpha', new_idle_alpha)
+    
+    @staticmethod
+    def run_apps_from_event_names(event_names: list[str]) -> None:
+        for i, name in enumerate(event_names):
+            for app_code in APPS.keys():
+                substring = APP_CODE_PREFIX + app_code
+                if substring in name:
+                    event_names[i] = name.replace(substring, '').strip()
+                    try:
+                        APPS[app_code]() # Launches the app.
+                    except Exception as e:
+                        logger.error(f'Error launching app for code {app_code}: {e}')
 
     def update_label_with_events_once(self) -> None:
         # Try not to have logging here, have it only in the functions called from here.
-        self.change_label_text_to(REFRESHING_MESSAGE)
+        # self.change_label_text_to(REFRESHING_MESSAGE)
         # self.change_idle_alpha_to(NON_EVENT_ALPHA)
         # Don't change alpha while refreshing; it may be hidden + distracting to change it when it isn't.
 
@@ -179,18 +173,17 @@ class Overlay(tk.Tk):
                 self.timeout_happened_before = True
                 self.change_label_text_to(TIMEOUT_RETRY_MESSAGE)
                 return
+            except Exception as e:
+                self.change_label_text_to(str(e))
+                self.change_idle_alpha_to(DEFAULT_ALPHA)
+                return
 
         if not event_names:
             self.change_label_text_to(NO_CURRENT_EVENT_MESSAGE)
             self.change_idle_alpha_to(NON_EVENT_ALPHA)
             return
 
-        for i, name in enumerate(event_names):
-            for app_code in APPS.keys():
-                substring = APP_CODE_PREFIX + app_code
-                if substring in name:
-                    event_names[i] = name.replace(substring, '').strip()
-                    run_app(APPS[app_code])
+        self.run_apps_from_event_names(event_names)
         self.change_label_text_to(' ⋅ '.join(event_names))
         self.change_idle_alpha_to(DEFAULT_ALPHA)
 
