@@ -1,7 +1,7 @@
 import subprocess
 from pathlib import Path
-# from loguru import logger; Don't log here, just raise errors. Logging will occur in the caller.
 from typing import Callable
+# from loguru import logger; Don't log here, just raise errors. Logging will occur in the caller.
 
 
 class App:

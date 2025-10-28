@@ -32,12 +32,14 @@ FETCH_TIMEOUT_SECONDS: int = 8 # Seconds to wait before considering the fetch op
 
 # Size of your screen; (width, height) in pixels.
 # This is used to position the overlay window.
-# Use `None` to force the application to calculate it upon initialisation.
+# If you don't know it, run `screen_geometry.py` in the utils folder.
 # Note: windll DPI awareness multiplies pixel sizes by 1.25. So (1536, 960)→(1960, 1200), 48→60
-SCREEN_GEOMETRY: tuple[int, int] | None = (1920, 1200)
-WINDOWS_TASKBAR_HEIGHT_IN_PIXELS = 52 # for my custom windows taskbar. default is 60
+SCREEN_GEOMETRY: tuple[int, int] = (1920, 1200)
+WINDOWS_TASKBAR_HEIGHT_IN_PIXELS = 55 # for my custom windows taskbar. default is 60
 
-MAX_CHAR_WIDTH_PIXEL_COUNT: int = 8 # Maximum width of a character in the font used, in pixels. Used to calculate window width.
+FONT_FAMILY: str = "Segoe UI"
+FONT_SIZE: int = 9
+
 MIN_WINDOW_WIDTH: int = 50 # Window width won't go lower than this.
 WINDOW_HEIGHT: int = 26
 
@@ -60,7 +62,6 @@ FREQUENT_TIMEOUT_MESSAGE: str = '[frequent timeouts detected. check wifi and log
 # -------------------------------------------------
 # REMINDER APP / EXTERNAL APPS CONFIGURATION
 # -------------------------------------------------
-from typing import Callable
 from app_config import py, exe, App
 
 APP_CODE_PREFIX: str = ';'

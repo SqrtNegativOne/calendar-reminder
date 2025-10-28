@@ -1,9 +1,11 @@
 import tkinter as tk
+from tkinter import font as tkfont
 from datetime import datetime
 from loguru import logger # same as the logger in fetch.py, so logs go to the same file
 import concurrent.futures
 from dotenv import load_dotenv
 load_dotenv()
+
 
 from ctypes import windll
 windll.shcore.SetProcessDpiAwareness(1)
@@ -12,49 +14,18 @@ from fetch import fetch_current_event_names
 
 from config import (
     SCREEN_GEOMETRY, BACKGROUND_COLOR, TEXT_COLOR,
+    FONT_FAMILY, FONT_SIZE,
     DEFAULT_ALPHA, HIDING_ALPHA, NON_EVENT_ALPHA, MOUSE_HOVER_ALPHA_CHANGE, MOUSE_CLICK_ALPHA_CHANGE,
     NO_CURRENT_EVENT_MESSAGE, REFRESHING_MESSAGE, TIMEOUT_RETRY_MESSAGE, FREQUENT_TIMEOUT_MESSAGE,
-    MAX_CHAR_WIDTH_PIXEL_COUNT, WINDOW_HEIGHT, MIN_WINDOW_WIDTH, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS,
+    MIN_WINDOW_WIDTH, WINDOW_HEIGHT, WINDOWS_TASKBAR_HEIGHT_IN_PIXELS,
     FETCH_INTERVAL_MINUTES, FETCH_TIMEOUT_SECONDS,
     APPS, APP_CODE_PREFIX
 )
 
+TEXT_PADDING_IN_PIXELS: int = 16
+
 SECOND_IN_MILLISECONDS: int = 1000
 FETCH_INTERVAL_MILLISECONDS: int = FETCH_INTERVAL_MINUTES * SECOND_IN_MILLISECONDS * 60
-
-def get_current_screen_width_height() -> tuple[int, int]:
-    """
-    Workaround to get the size of the current screen in a multi-screen setup.
-    """
-    if SCREEN_GEOMETRY is not None:
-        return SCREEN_GEOMETRY
-    
-    from re import fullmatch
-    
-    # Find `screen_geometry` by creating a full-screen temporary Tkinter window in current screen
-    root = tk.Tk()
-    root.update_idletasks()
-    root.attributes('-fullscreen', True)
-    root.state('iconic')
-    screen_geometry = root.winfo_geometry()
-    root.destroy()
-
-    match = fullmatch(r"(\d+)x(\d+)\+\d+\+\d+", screen_geometry)
-    if not match:
-        raise ValueError(f'Received invalid object: {screen_geometry=}')
-    
-    screen_width, screen_height = map(int, match.groups())
-    print(f"Your screen dimensions are: ({screen_width}, {screen_height}).")
-    print(f"Input them to the config.py file to speed up GUI initialisation!")
-    return screen_width, screen_height
-
-def get_window_geometry(window_width: int, window_height: int) -> str:
-    screen_width, screen_height = get_current_screen_width_height()
-
-    window_left = (screen_width - window_width) // 2
-    window_top = screen_height - WINDOWS_TASKBAR_HEIGHT_IN_PIXELS - window_height
-
-    return f'{window_width}x{window_height}+{window_left}+{window_top}'
 
 
 class Overlay(tk.Tk):
@@ -69,30 +40,46 @@ class Overlay(tk.Tk):
 
         self.config(bg=BACKGROUND_COLOR)
         
-        self._set_geometry(REFRESHING_MESSAGE)
+        self.font: tkfont.Font = tkfont.Font(family=FONT_FAMILY, size=FONT_SIZE, weight='normal') # Needed for measuring text width.
+        self._init_geometry()
+        self.update_idletasks()
         self._label_text: tk.StringVar = tk.StringVar(value=REFRESHING_MESSAGE)
         label: tk.Label = tk.Label(
             self,
             textvariable=self._label_text,
             foreground=TEXT_COLOR,
-            # font=FONT,
+            font=self.font,
             bg=BACKGROUND_COLOR
         )
         label.pack()
-
+        
         self.timeout_happened_before: bool = False
 
         self._bind_everything()
 
         self.run()
     
-    def _set_geometry(self, message: str) -> None:
-        self.geometry(
-            get_window_geometry(
-                window_width  = max(MAX_CHAR_WIDTH_PIXEL_COUNT * len(message), MIN_WINDOW_WIDTH),
-                window_height = WINDOW_HEIGHT
-            )
-        )
+    def _init_geometry(self) -> None:
+        screen_width, screen_height = SCREEN_GEOMETRY
+
+        window_width = max(self.font.measure(REFRESHING_MESSAGE) + TEXT_PADDING_IN_PIXELS, MIN_WINDOW_WIDTH)
+        window_height = WINDOW_HEIGHT
+
+        window_left = (screen_width - window_width) // 2
+        window_top = screen_height - WINDOWS_TASKBAR_HEIGHT_IN_PIXELS - window_height
+
+        geometry = f'{window_width}x{window_height}+{window_left}+{window_top}'
+        logger.info(f'Initial geometry: {geometry}')
+        self.geometry(geometry)
+    
+    def center_horizontally(self) -> None:
+        x = (self.winfo_screenwidth() - self.winfo_width()) // 2
+        self.geometry(f'{self.winfo_width()}x{self.winfo_height()}+{x}+{self.winfo_y()}')
+
+    def change_width(self, message: str) -> None:
+        logger.info(f'Geometry: {self.geometry()}')
+        width = max(self.font.measure(message) + TEXT_PADDING_IN_PIXELS, MIN_WINDOW_WIDTH)
+        self.geometry(f"{width}x{self.winfo_height()}+{self.winfo_x()}+{self.winfo_y()}")
     
     def _bind_everything(self) -> None:
         def Keypress(event):
@@ -101,7 +88,10 @@ class Overlay(tk.Tk):
             if key == 'h':
                 self.toggle_hide()
             elif key == 'r':
+                self.change_label_text_to(REFRESHING_MESSAGE)
                 self.run()
+            elif key == 'c':
+                self.center_horizontally()
         self.bind('<Key>', Keypress)
 
         self.x = 0
@@ -136,7 +126,7 @@ class Overlay(tk.Tk):
 
     def change_label_text_to(self, new_text: str) -> None:
         self._label_text.set(value=new_text)
-        self._set_geometry(new_text)
+        self.change_width(new_text)
         logger.info(f'Label text changed to: {new_text}')
 
     def change_idle_alpha_to(self, new_idle_alpha: float) -> None:
@@ -160,6 +150,7 @@ class Overlay(tk.Tk):
 
     def update_label_with_events_once(self) -> None:
         # Try not to have logging here, have it only in the functions called from here.
+
         # self.change_label_text_to(REFRESHING_MESSAGE)
         # self.change_idle_alpha_to(NON_EVENT_ALPHA)
         # Don't change alpha while refreshing; it may be hidden + distracting to change it when it isn't.
@@ -177,7 +168,7 @@ class Overlay(tk.Tk):
                 self.change_label_text_to(TIMEOUT_RETRY_MESSAGE)
                 return
             except Exception as e:
-                self.change_label_text_to(str(e))
+                self.change_label_text_to('⚠' + str(e) + '⚠')
                 self.change_idle_alpha_to(DEFAULT_ALPHA)
                 return
 
