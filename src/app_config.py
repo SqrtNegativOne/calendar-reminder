@@ -1,7 +1,18 @@
 import subprocess
 from pathlib import Path
-from loguru import logger
+# from loguru import logger; Don't log here, just raise errors. Logging will occur in the caller.
 from typing import Callable
+
+
+class App:
+    def __init__(self, launch_callable: Callable):
+        self.launch_callable = launch_callable
+        self.already_running = False
+
+    def launch(self):
+        if self.already_running: return
+        self.already_running = True
+        self.launch_callable()
 
 
 def py(py_path: str, interpreter: str | None = None) -> Callable:

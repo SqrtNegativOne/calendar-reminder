@@ -61,15 +61,15 @@ FREQUENT_TIMEOUT_MESSAGE: str = '[frequent timeouts detected. check wifi and log
 # REMINDER APP / EXTERNAL APPS CONFIGURATION
 # -------------------------------------------------
 from typing import Callable
-from app_config import py, exe
+from app_config import py, exe, App
 
 APP_CODE_PREFIX: str = ';'
-APPS: dict[str, Callable] = {
-    'A': exe(r"C:\Users\arkma\AppData\Local\Programs\Anki\anki.exe"),
+APPS: dict[str, App] = {
+    'A': App(exe(r"C:\Users\arkma\AppData\Local\Programs\Anki\anki.exe")),
     # bcdefghijklmn
-    'O': exe(r"C:\Users\arkma\AppData\Local\Programs\obsidian\Obsidian.exe"),
+    'O': App(exe(r"C:\Users\arkma\AppData\Local\Programs\obsidian\Obsidian.exe")),
     # pqr
-    'S': py(r"C:\Users\arkma\Documents\GitHub\StopwatchTK\main.pyw", interpreter=r"C:\Users\arkma\Documents\GitHub\StopwatchTK\.venv\Scripts\pythonw.exe"),
+    'S': App(py(r"C:\Users\arkma\Documents\GitHub\StopwatchTK\main.pyw", interpreter=r"C:\Users\arkma\Documents\GitHub\StopwatchTK\.venv\Scripts\pythonw.exe")),
     # tuvwxyz
 }
 

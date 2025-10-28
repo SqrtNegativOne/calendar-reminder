@@ -148,12 +148,15 @@ class Overlay(tk.Tk):
         for i, name in enumerate(event_names):
             for app_code in APPS.keys():
                 substring = APP_CODE_PREFIX + app_code
-                if substring in name:
-                    event_names[i] = name.replace(substring, '').strip()
-                    try:
-                        APPS[app_code]() # Launches the app.
-                    except Exception as e:
-                        logger.error(f'Error launching app for code {app_code}: {e}')
+                if not substring in name:
+                    APPS[app_code].already_running = False # Reset for next time.
+                    continue
+                
+                event_names[i] = name.replace(substring, '').strip()
+                try:
+                    APPS[app_code].launch() # Launches the app.
+                except Exception as e:
+                    logger.error(f'Error launching app for code {app_code}: {e}')
 
     def update_label_with_events_once(self) -> None:
         # Try not to have logging here, have it only in the functions called from here.
