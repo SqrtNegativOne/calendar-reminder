@@ -52,6 +52,9 @@ class Overlay(tk.Tk):
             bg=BACKGROUND_COLOR
         )
         label.pack()
+
+        self._idle_alpha: float = DEFAULT_ALPHA
+        self.attributes('-alpha', self._idle_alpha)
         
         self.timeout_happened_before: bool = False
 
