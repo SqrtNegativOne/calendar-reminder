@@ -24,4 +24,4 @@ def get_current_screen_width_height() -> tuple[int, int]:
     print(f"Input them to the config.py file to speed up GUI initialisation!")
     return screen_width, screen_height
 
-get_current_screen_width_height()
+print(get_current_screen_width_height())

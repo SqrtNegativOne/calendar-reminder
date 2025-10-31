@@ -78,11 +78,13 @@ class Overlay(tk.Tk):
     def center_horizontally(self) -> None:
         x = (self.winfo_screenwidth() - self.winfo_width()) // 2
         self.geometry(f'{self.winfo_width()}x{self.winfo_height()}+{x}+{self.winfo_y()}')
+        self.overrideredirect(True)
 
     def change_width(self, message: str) -> None:
         logger.info(f'Geometry: {self.geometry()}')
         width = max(self.font.measure(message) + TEXT_PADDING_IN_PIXELS, MIN_WINDOW_WIDTH)
         self.geometry(f"{width}x{self.winfo_height()}+{self.winfo_x()}+{self.winfo_y()}")
+        self.overrideredirect(True)
     
     def _bind_everything(self) -> None:
         def Keypress(event):
