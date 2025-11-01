@@ -83,8 +83,9 @@ class Overlay(tk.Tk):
 
     def change_width(self, message: str) -> None:
         logger.info(f'Geometry: {self.geometry()}')
+        prev_width = self.winfo_width()
         width = max(self.font.measure(message) + TEXT_PADDING_IN_PIXELS, MIN_WINDOW_WIDTH)
-        x = self.winfo_x()
+        x = self.winfo_x() - (width - prev_width) // 2
         if x + width > self.winfo_screenwidth():
             x = self.winfo_screenwidth() - width
         elif x < 0:
