@@ -23,6 +23,7 @@ from config import (
 )
 
 TEXT_PADDING_IN_PIXELS: int = 16
+MAX_MESSAGE_LENGTH: int = 80
 
 SECOND_IN_MILLISECONDS: int = 1000
 FETCH_INTERVAL_MILLISECONDS: int = FETCH_INTERVAL_MINUTES * SECOND_IN_MILLISECONDS * 60
@@ -83,7 +84,12 @@ class Overlay(tk.Tk):
     def change_width(self, message: str) -> None:
         logger.info(f'Geometry: {self.geometry()}')
         width = max(self.font.measure(message) + TEXT_PADDING_IN_PIXELS, MIN_WINDOW_WIDTH)
-        self.geometry(f"{width}x{self.winfo_height()}+{self.winfo_x()}+{self.winfo_y()}")
+        x = self.winfo_x()
+        if x + width > self.winfo_screenwidth():
+            x = self.winfo_screenwidth() - width
+        elif x < 0:
+            x = 0
+        self.geometry(f"{width}x{self.winfo_height()}+{x}+{self.winfo_y()}")
         self.overrideredirect(True)
     
     def _bind_everything(self) -> None:
@@ -130,6 +136,9 @@ class Overlay(tk.Tk):
         self.attributes('-alpha', self._idle_alpha-MOUSE_HOVER_ALPHA_CHANGE)
 
     def change_label_text_to(self, new_text: str) -> None:
+        if len(new_text) > MAX_MESSAGE_LENGTH:
+            logger.warning(f'Label text exceeds max length ({MAX_MESSAGE_LENGTH}): {new_text}')
+            new_text = new_text[:MAX_MESSAGE_LENGTH] + '...'
         self._label_text.set(value=new_text)
         self.change_width(new_text)
         logger.info(f'Label text changed to: {new_text}')
