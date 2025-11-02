@@ -23,7 +23,7 @@ from config import (
 )
 
 TEXT_PADDING_IN_PIXELS: int = 16
-MAX_MESSAGE_LENGTH: int = 80
+MAX_MESSAGE_LENGTH: int = 50
 
 SECOND_IN_MILLISECONDS: int = 1000
 FETCH_INTERVAL_MILLISECONDS: int = FETCH_INTERVAL_MINUTES * SECOND_IN_MILLISECONDS * 60
@@ -138,10 +138,11 @@ class Overlay(tk.Tk):
 
     def change_label_text_to(self, new_text: str) -> None:
         if len(new_text) > MAX_MESSAGE_LENGTH:
-            logger.warning(f'Label text exceeds max length ({MAX_MESSAGE_LENGTH}): {new_text}')
+            logger.info(f'Label text exceeds max length ({MAX_MESSAGE_LENGTH}): {new_text}')
             new_text = new_text[:MAX_MESSAGE_LENGTH] + '...'
         self._label_text.set(value=new_text)
         self.change_width(new_text)
+        self.update_idletasks() # Blocking but should be quick.
         logger.info(f'Label text changed to: {new_text}')
 
     def change_idle_alpha_to(self, new_idle_alpha: float) -> None:
