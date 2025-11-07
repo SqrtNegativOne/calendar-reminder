@@ -129,6 +129,7 @@ class Overlay(tk.Tk):
         y = self.winfo_y()
         self.geometry(f'+{x}+{y}')
         self.attributes('-alpha', self._idle_alpha-MOUSE_CLICK_ALPHA_CHANGE) # We are clicking when we are dragging.
+        self.overrideredirect(True)
 
     def mouse_leave(self, event) -> None:
         self.attributes('-alpha', self._idle_alpha)
