@@ -116,6 +116,7 @@ class Overlay(tk.Tk):
     def click(self, event) -> None:
         self.x = event.x
         self.attributes('-alpha', self._idle_alpha-MOUSE_CLICK_ALPHA_CHANGE)
+        self.overrideredirect(True)
     
     def release(self, event) -> None:
         self.attributes('-alpha', self._idle_alpha)
