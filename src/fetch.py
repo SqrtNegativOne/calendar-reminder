@@ -11,7 +11,7 @@ from config import (
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 
 from loguru import logger
-logger.add(LOG_FILE_PATH)
+logger.add(LOG_FILE_PATH, rotation='10 MB', retention='10 days', level='DEBUG')
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials

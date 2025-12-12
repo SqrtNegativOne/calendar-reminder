@@ -37,6 +37,7 @@ class Overlay(tk.Tk):
 
         self.overrideredirect(True) # Rips out the titlebar
         self.attributes('-topmost', True)
+        self.attributes('-toolwindow', True)
         self.protocol("WM_DELETE_WINDOW", lambda: logger.info('Overlay kill attempted.'))
 
         self.config(bg=BACKGROUND_COLOR)

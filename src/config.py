@@ -9,7 +9,7 @@ SECRETS_PATH = BASE_PATH.parent / 'secrets'
 USER_ACCESS_CREDENTIALS_PATH = SECRETS_PATH / 'token.json'
 CLIENT_SECRETS_PATH = SECRETS_PATH / 'credentials.json'
 
-LOG_FILE_PATH = BASE_PATH / 'out.log'
+LOG_FILE_PATH = BASE_PATH / 'logs' / 'out.log'
 
 # -------------------------------------------------
 # CALENDAR FETCHING / TIME CONFIGURATION
