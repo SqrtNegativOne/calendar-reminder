@@ -111,7 +111,7 @@ class Overlay(tk.Tk):
             elif key == 'l':
                 self.large_mode = not self.large_mode
                 if self.large_mode:
-                    self.font.config(size=FONT_SIZE * 2)
+                    self.font.config(size=FONT_SIZE * 3)
                 else:
                     self.font.config(size=FONT_SIZE)
                 self.change_width(self._label_text.get())
