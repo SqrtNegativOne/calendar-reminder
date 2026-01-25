@@ -42,9 +42,12 @@ class Overlay(tk.Tk):
 
         self.config(bg=BACKGROUND_COLOR)
         
+        self.large_mode = False
         self.font: tkfont.Font = tkfont.Font(family=FONT_FAMILY, size=FONT_SIZE, weight='normal') # Needed for measuring text width.
         self._init_geometry()
         self.update_idletasks()
+
+        self.old_text = REFRESHING_MESSAGE
         self._label_text: tk.StringVar = tk.StringVar(value=REFRESHING_MESSAGE)
         label: tk.Label = tk.Label(
             self,
@@ -105,6 +108,15 @@ class Overlay(tk.Tk):
                 self.run()
             elif key == 'c':
                 self.center_horizontally()
+            elif key == 'l':
+                self.large_mode = not self.large_mode
+                if self.large_mode:
+                    self.font.config(size=FONT_SIZE * 2)
+                else:
+                    self.font.config(size=FONT_SIZE)
+                self.change_width(self._label_text.get())
+                self.update_idletasks()
+                logger.info(f'Large mode set to: {self.large_mode}')
         self.bind('<Key>', Keypress)
 
         self.x = 0
@@ -143,6 +155,8 @@ class Overlay(tk.Tk):
         if len(new_text) > MAX_MESSAGE_LENGTH:
             logger.info(f'Label text exceeds max length ({MAX_MESSAGE_LENGTH}): {new_text}')
             new_text = new_text[:MAX_MESSAGE_LENGTH] + '...'
+        if new_text == self.old_text:
+            return
         self._label_text.set(value=new_text)
         self.change_width(new_text)
         self.update_idletasks() # Blocking but should be quick.
