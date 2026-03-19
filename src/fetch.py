@@ -84,7 +84,7 @@ def parse_event_datetime(event_time: dict) -> datetime | None:
     else:
         raise ValueError(f"Unexpected event time format: {event_time}")
 
-def fetch_current_event_names_from_calendar(service, calendar_id) -> list[str]:
+def fetch_current_event_names_from_calendar(service, calendar_id) -> list[tuple[str, datetime]]:
     utc_now = datetime.now(timezone.utc)
     try:
         events_response = (
@@ -102,24 +102,24 @@ def fetch_current_event_names_from_calendar(service, calendar_id) -> list[str]:
     except HttpError as error:
         logger.error(f"Error fetching calendar items: {error}")
         return []
-    
+
     event_objects = events_response.get('items', None)
     if event_objects is None:
         logger.error(f"The returned dictionary did not have an items attribute despite no HttpErrors. Shouldn't be possible.")
         return []
-    
-    current_event_names = []
+
+    current_events = []
     for event in event_objects:
         start = parse_event_datetime(event["start"])
         end = parse_event_datetime(event["end"])
         if not start or not end:
             continue
         if start <= utc_now < end:
-            current_event_names.append(event["summary"])
-    
-    return current_event_names
+            current_events.append((event["summary"], end))
 
-def fetch_current_event_names() -> list[str]:
+    return current_events
+
+def fetch_current_event_names() -> list[tuple[str, datetime]]:
     logger.info('Fetching current event names, by first fetching credentials...')
     creds = get_credentials()
     logger.info('Credentials obtained. Building calendar service...')
@@ -135,5 +135,6 @@ def fetch_current_event_names() -> list[str]:
 
 if __name__ == '__main__':
     logger.info('Running fetch.py directly; fetching and printing current event names.')
-    print(fetch_current_event_names())
+    events = fetch_current_event_names()
+    print([(name, end.isoformat()) for name, end in events])
     logger.info('fetch.py finished running.')

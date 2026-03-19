@@ -1,6 +1,7 @@
+import sys
 import tkinter as tk
 from tkinter import font as tkfont
-from datetime import datetime
+from datetime import datetime, timezone
 from loguru import logger # same as the logger in fetch.py, so logs go to the same file
 import concurrent.futures
 from dotenv import load_dotenv
@@ -9,6 +10,13 @@ load_dotenv()
 
 from ctypes import windll
 windll.shcore.SetProcessDpiAwareness(1)
+
+# Single-instance guard: exit if another instance is already running.
+_MUTEX_NAME = "Global\\CalendarReminderOverlay"
+_mutex_handle = windll.kernel32.CreateMutexW(None, True, _MUTEX_NAME)
+if windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
+    logger.warning('Another instance is already running. Exiting.')
+    sys.exit(0)
 
 from fetch import fetch_current_event_names
 
@@ -60,8 +68,9 @@ class Overlay(tk.Tk):
 
         self._idle_alpha: float = DEFAULT_ALPHA
         self.attributes('-alpha', self._idle_alpha)
-        
+
         self.timeout_happened_before: bool = False
+        self.earliest_event_end_utc: datetime | None = None
 
         self._bind_everything()
 
@@ -191,25 +200,31 @@ class Overlay(tk.Tk):
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(fetch_current_event_names)
             try:
-                event_names: list[str] = future.result(timeout=FETCH_TIMEOUT_SECONDS)
+                current_events: list[tuple[str, datetime]] = future.result(timeout=FETCH_TIMEOUT_SECONDS)
             except concurrent.futures.TimeoutError:
                 if self.timeout_happened_before:
                     self.change_label_text_to(FREQUENT_TIMEOUT_MESSAGE)
                     self.change_idle_alpha_to(NON_EVENT_ALPHA)
+                    self.earliest_event_end_utc = None
                     return
                 self.timeout_happened_before = True
                 self.change_label_text_to(TIMEOUT_RETRY_MESSAGE)
+                self.earliest_event_end_utc = None
                 return
             except Exception as e:
                 self.change_label_text_to('⚠' + str(e) + '⚠')
                 self.change_idle_alpha_to(DEFAULT_ALPHA)
+                self.earliest_event_end_utc = None
                 return
 
-        if not event_names:
+        if not current_events:
             self.change_label_text_to(NO_CURRENT_EVENT_MESSAGE)
             self.change_idle_alpha_to(NON_EVENT_ALPHA)
+            self.earliest_event_end_utc = None
             return
 
+        event_names = [name for name, _ in current_events]
+        self.earliest_event_end_utc = min(end for _, end in current_events)
         self.run_apps_from_event_names(event_names)
         self.change_label_text_to(' ⋅ '.join(event_names))
         self.change_idle_alpha_to(DEFAULT_ALPHA)
@@ -221,8 +236,14 @@ class Overlay(tk.Tk):
         now = datetime.now()
         seconds_till_next_interval: int = \
             (FETCH_INTERVAL_MINUTES - int(now.minute) % FETCH_INTERVAL_MINUTES) * 60 - now.second - FETCH_TIMEOUT_SECONDS
-        logger.info(f'Next update in {seconds_till_next_interval} second(s) (at least {seconds_till_next_interval // 60} minute(s)).')
-        self.after_id = self.after(seconds_till_next_interval * SECOND_IN_MILLISECONDS, self.run)
+        delay_seconds = seconds_till_next_interval
+        if self.earliest_event_end_utc is not None:
+            now_utc = datetime.now(timezone.utc)
+            seconds_till_event_ends = int((self.earliest_event_end_utc - now_utc).total_seconds())
+            seconds_till_event_ends = max(1, seconds_till_event_ends)
+            delay_seconds = min(delay_seconds, seconds_till_event_ends)
+        logger.info(f'Next update in {delay_seconds} second(s) (at least {delay_seconds // 60} minute(s)).')
+        self.after_id = self.after(delay_seconds * SECOND_IN_MILLISECONDS, self.run)
 
     def toggle_hide(self) -> None:
         if self._idle_alpha == DEFAULT_ALPHA:
